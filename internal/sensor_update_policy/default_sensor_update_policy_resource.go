@@ -94,7 +94,7 @@ func (d *defaultSensorUpdatePolicyResourceModel) wrap(
 		d.PlatformName = types.StringValue(*policy.PlatformName)
 	}
 
-	if strings.ToLower(d.PlatformName.ValueString()) != strings.ToLower(*policy.PlatformName) {
+	if !strings.EqualFold(d.PlatformName.ValueString(), *policy.PlatformName) {
 		diags.AddError(
 			"Mismatch platform_name",
 			fmt.Sprintf(
@@ -232,7 +232,7 @@ func (r *defaultSensorUpdatePolicyResource) Schema(
 ) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: fmt.Sprintf(
-			"Default Sensor Update Policy --- This resource allows management of the default sensor update policy in the CrowdStrike Falcon platform.\n\n%s",
+			"Sensor Update Policy --- This resource allows management of the default sensor update policy in the CrowdStrike Falcon platform.\n\n%s",
 			scopes.GenerateScopeDescription(
 				[]scopes.Scope{
 					{
@@ -263,7 +263,6 @@ func (r *defaultSensorUpdatePolicyResource) Schema(
 				Optional:    true,
 				Description: "Sensor arm64 build to use for the default sensor update policy (Linux only). Required if platform_name is Linux.",
 			},
-			// todo: make this case insensitive
 			"platform_name": schema.StringAttribute{
 				Required:    true,
 				Description: "Chooses which default sensor update policy to manage. (Windows, Mac, Linux)",
@@ -447,7 +446,6 @@ func (r *defaultSensorUpdatePolicyResource) Delete(
 	resp *resource.DeleteResponse,
 ) {
 	// We can not delete the default sensor update policy, so we will just remove it from state.
-	return
 }
 
 // ImportState implements the logic to support resource imports.
