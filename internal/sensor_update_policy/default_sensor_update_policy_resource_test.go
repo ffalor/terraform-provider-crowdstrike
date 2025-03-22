@@ -1,18 +1,61 @@
 package sensorupdatepolicy_test
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/acctest"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
 
 const resourceName = "crowdstrike_default_sensor_update_policy.default"
 
-func TestAccDefaultSensorUpdatePolicyResourceWithSchedule(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+func TestAccDefaultSensorUpdatePolicyResourceBadBuildUpdate(t *testing.T) {
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		PreCheck:                 func() { acctest.PreCheck(t) },
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.4.0"))),
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: acctest.ProviderConfig + `
+resource "crowdstrike_default_sensor_update_policy" "default" {
+  platform_name        = "Windows"
+  build                = "18721"
+  uninstall_protection = false 
+  schedule = {
+    enabled = false
+  }
+}`,
+			},
+			{
+				Config: acctest.ProviderConfig + `
+resource "crowdstrike_default_sensor_update_policy" "default" {
+  platform_name        = "Windows"
+  build                = "invalid"
+  uninstall_protection = false 
+  schedule = {
+    enabled = false
+  }
+}`,
+				ExpectError: regexp.MustCompile(
+					"The API returned a build that did not match the build in plan: \"invalid\"",
+				),
+			},
+		},
+	})
+}
+
+func TestAccDefaultSensorUpdatePolicyResourceWithSchedule(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.4.0"))),
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: acctest.ProviderConfig + `

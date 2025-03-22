@@ -90,24 +90,35 @@ func (d *sensorUpdatePolicyResourceModel) wrap(
 	d.Description = types.StringValue(*policy.Description)
 	d.Enabled = types.BoolValue(*policy.Enabled)
 
-	less := func(a, b string) bool { return a < b }
-	hostGroupDiff := cmp.Diff(d.HostGroups, policy.Groups, cmpopts.SortSlices(less))
-	if hostGroupDiff != "" && validateHostGroups {
-		summary := "Apply ran without issue, but sensor update policy is still missing host groups. This usually happens when an invalid host group is provided."
+	if validateHostGroups {
+		policyGroups := make([]string, 0, len(policy.Groups))
+		modelGroups := make([]string, 0, len(d.HostGroups.Elements()))
 
 		if len(policy.Groups) > 0 {
-			hostGroupIds := []string{}
-
 			for _, hostGroup := range policy.Groups {
-				hostGroupIds = append(hostGroupIds, *hostGroup.ID)
+				policyGroups = append(policyGroups, *hostGroup.ID)
 			}
-			summary = fmt.Sprintf(
-				"%s\n\nThe following host groups are assigned to the policy:\n%s",
-				summary,
-				strings.Join(hostGroupIds, "\n"),
-			)
 		}
-		diags.AddAttributeError(path.Root("host_groups"), "Host group mismatch", summary)
+
+		diags.Append(d.HostGroups.ElementsAs(ctx, &modelGroups, true)...)
+		if modelGroups == nil {
+			modelGroups = []string{}
+		}
+
+		less := func(a, b string) bool { return a < b }
+		hostGroupDiff := cmp.Diff(policyGroups, modelGroups, cmpopts.SortSlices(less))
+		if hostGroupDiff != "" {
+			summary := "Apply ran without issue, but sensor update policy is still missing host groups. This usually happens when an invalid host group is provided."
+
+			if len(policyGroups) > 0 {
+				summary = fmt.Sprintf(
+					"%s\n\nThe following host groups are valid and assigned to the sensor update policy:\n\n%s",
+					summary,
+					strings.Join(policyGroups, "\n"),
+				)
+			}
+			diags.AddAttributeError(path.Root("host_groups"), "Host group mismatch", summary)
+		}
 	}
 
 	diags.Append(d.assignHostGroups(ctx, policy.Groups)...)
@@ -546,7 +557,7 @@ func (r *sensorUpdatePolicyResource) Read(
 
 	policy := res.Payload.Resources[0]
 
-	resp.Diagnostics.Append(state.wrap(ctx, *policy, false, true)...)
+	resp.Diagnostics.Append(state.wrap(ctx, *policy, false, false)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -562,12 +573,14 @@ func (r *sensorUpdatePolicyResource) Update(
 	// Retrieve values from plan
 	var plan sensorUpdatePolicyResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(plan.extract(ctx)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 	// Retrieve values from state
 	var state sensorUpdatePolicyResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(state.extract(ctx)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -827,6 +840,8 @@ func (r *sensorUpdatePolicyResource) ValidateConfig(
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	resp.Diagnostics.Append(utils.ValidateEmptyIDs(ctx, config.HostGroups, "host_groups")...)
 
 	platform := strings.ToLower(config.PlatformName.ValueString())
 

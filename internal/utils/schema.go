@@ -2,9 +2,11 @@ package utils
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -27,4 +29,35 @@ func ListTypeAs[T any](
 
 	diags.Append(list.ElementsAs(ctx, &elements, false)...)
 	return elements
+}
+
+// ValidateEmptyIDs checks if a set contains empty IDs. Returns a attribute error at path.
+func ValidateEmptyIDs(ctx context.Context, checkSet types.Set, attrPath string) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	if checkSet.IsNull() {
+		return diags
+	}
+
+	if checkSet.IsUnknown() {
+		return diags
+	}
+
+	ids := make([]types.String, 0, len(checkSet.Elements()))
+	diags.Append(checkSet.ElementsAs(ctx, &ids, false)...)
+	if diags.HasError() {
+		return diags
+	}
+
+	for _, id := range ids {
+		if !id.IsUnknown() && len(id.ValueString()) == 0 {
+			diags.AddAttributeError(
+				path.Root(attrPath),
+				fmt.Sprintf("Error validating %s", attrPath),
+				"List of IDs can not contain a empty \"\" value",
+			)
+		}
+	}
+
+	return diags
 }
