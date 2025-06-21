@@ -14,6 +14,15 @@ const (
 provider "crowdstrike" {}
 `
 	CharSetNum = "0123456789"
+
+	// FalconClientIDEnvVar is the environment variable for the Falcon Client ID
+	FalconClientIDEnvVar = "FALCON_CLIENT_ID"
+	// FalconClientSecretEnvVar is the environment variable for the Falcon Client Secret
+	FalconClientSecretEnvVar = "FALCON_CLIENT_SECRET"
+	// HostGroupIDEnvVar is the environment variable for the Host Group ID
+	HostGroupIDEnvVar = "HOST_GROUP_ID"
+	// IOARuleGroupIDEnvVar is the environment variable for the IOA Rule Group ID
+	IOARuleGroupIDEnvVar = "IOA_RULE_GROUP_ID"
 )
 
 // ProtoV6ProviderFactories are used to instantiate a provider during
@@ -24,13 +33,13 @@ var ProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, erro
 	"crowdstrike": providerserver.NewProtocol6WithError(provider.New("test")()),
 }
 
-func PreCheck(t *testing.T) {
+func PreCheck(t *testing.T, additionalVars ...string) {
 	requiredEnvVars := []string{
-		"FALCON_CLIENT_ID",
-		"FALCON_CLIENT_SECRET",
-		"HOST_GROUP_ID",
-		"IOA_RULE_GROUP_ID",
+		FalconClientIDEnvVar,
+		FalconClientSecretEnvVar,
 	}
+	requiredEnvVars = append(requiredEnvVars, additionalVars...)
+
 	for _, envVar := range requiredEnvVars {
 		if v := os.Getenv(envVar); v == "" {
 			t.Fatalf("%s must be set for acceptance tests", envVar)

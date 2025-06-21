@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/crowdstrike/gofalcon/falcon"
+	contentupdatepolicy "github.com/crowdstrike/terraform-provider-crowdstrike/internal/content_update_policy"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/fcs"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/fim"
 	preventionpolicy "github.com/crowdstrike/terraform-provider-crowdstrike/internal/prevention_policy"
@@ -246,6 +247,7 @@ func (p *CrowdStrikeProvider) Resources(ctx context.Context) []func() resource.R
 		fim.NewFIMPolicyResource,
 		fim.NewFilevantageRuleGroupResource,
 		fcs.NewCloudAWSAccountResource,
+		contentupdatepolicy.NewContentUpdatePolicyResource,
 		fcs.NewCloudAzureTenantEventhubSettingsResource,
 		fcs.NewCloudAzureTenantResource,
 	}
