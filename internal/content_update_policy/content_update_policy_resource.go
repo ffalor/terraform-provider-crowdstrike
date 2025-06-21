@@ -63,9 +63,10 @@ func (m ringAssignmentModel) AttributeTypes(ctx context.Context) map[string]attr
 	}
 }
 
-func ringAssignmentBlock() schema.Block {
-	return schema.SingleNestedBlock{
+func ringAssignmentAttribute() schema.Attribute {
+	return schema.SingleNestedAttribute{
 		Description: "Settings for a deployment ring.",
+		Required:    true,
 		Attributes: map[string]schema.Attribute{
 			"deployment_ring": schema.StringAttribute{
 				Required: true,
@@ -100,12 +101,6 @@ func (r *contentUpdatePolicyResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Blocks: map[string]schema.Block{
-			"system_critical":          ringAssignmentBlock(),
-			"sensor_operations":        ringAssignmentBlock(),
-			"rapid_response":           ringAssignmentBlock(),
-			"vulnerability_management": ringAssignmentBlock(),
-		},
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -126,6 +121,10 @@ func (r *contentUpdatePolicyResource) Schema(
 				Optional:            true,
 				MarkdownDescription: "Whether the content update policy is enabled.",
 			},
+			"system_critical":          ringAssignmentAttribute(),
+			"sensor_operations":        ringAssignmentAttribute(),
+			"rapid_response":           ringAssignmentAttribute(),
+			"vulnerability_management": ringAssignmentAttribute(),
 		},
 		Description: `
 This resource manages a content update policy.

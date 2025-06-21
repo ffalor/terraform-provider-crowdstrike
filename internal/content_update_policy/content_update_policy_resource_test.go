@@ -20,7 +20,7 @@ func TestAccContentUpdatePolicy(t *testing.T) {
 					resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", "description", "Terraform Acceptance Test"),
 					resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", "enabled", "true"),
 					resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", "system_critical.deployment_ring", "ga"),
-					resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", "sensor_operations.deployment_ring", "ea"),
+					resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", "sensor_operations.deployment_ring", "ga"),
 					resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", "rapid_response.deployment_ring", "ga"),
 					resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", "vulnerability_management.deployment_ring", "ga"),
 				),
@@ -33,6 +33,9 @@ func TestAccContentUpdatePolicy(t *testing.T) {
 					resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", "description", "Terraform Acceptance Test Updated"),
 					resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", "enabled", "false"),
 					resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", "system_critical.deployment_ring", "ea"),
+					resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", "sensor_operations.deployment_ring", "ga"),
+					resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", "rapid_response.deployment_ring", "ga"),
+					resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", "vulnerability_management.deployment_ring", "ga"),
 				),
 			},
 			// Test delay_hours
@@ -78,16 +81,16 @@ resource "crowdstrike_content_update_policy" "test" {
   name        = "%s"
   description = "%s"
   enabled     = %t
-  system_critical {
+  system_critical = {
     deployment_ring = "%s"
   }
-  sensor_operations {
-	deployment_ring = "ea"
-  }
-  rapid_response {
+  sensor_operations = {
 	deployment_ring = "ga"
   }
-  vulnerability_management {
+  rapid_response = {
+	deployment_ring = "ga"
+  }
+  vulnerability_management = {
     deployment_ring = "ga"
   }
 }
@@ -113,16 +116,16 @@ func testAccContentUpdatePolicyConfigNoDescription(name string, enabled bool, sy
 resource "crowdstrike_content_update_policy" "test" {
   name        = "%s"
   enabled     = %t
-  system_critical {
+  system_critical = {
     deployment_ring = "%s"
   }
-  sensor_operations {
-	deployment_ring = "ea"
-  }
-  rapid_response {
+  sensor_operations = {
 	deployment_ring = "ga"
   }
-  vulnerability_management {
+  rapid_response = {
+	deployment_ring = "ga"
+  }
+  vulnerability_management = {
     deployment_ring = "ga"
   }
 }
@@ -135,17 +138,17 @@ resource "crowdstrike_content_update_policy" "test" {
   name        = "%s"
   description = "%s"
   enabled     = %t
-  system_critical {
+  system_critical = {
     deployment_ring = "ga"
     delay_hours     = %d
   }
-  sensor_operations {
-	deployment_ring = "ea"
-  }
-  rapid_response {
+  sensor_operations = {
 	deployment_ring = "ga"
   }
-  vulnerability_management {
+  rapid_response = {
+	deployment_ring = "ga"
+  }
+  vulnerability_management = {
     deployment_ring = "ga"
   }
 }

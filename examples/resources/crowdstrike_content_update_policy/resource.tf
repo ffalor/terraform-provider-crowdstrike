@@ -16,20 +16,20 @@ resource "crowdstrike_content_update_policy" "example" {
   description = "An example content update policy managed by Terraform"
   enabled     = true
 
-  system_critical {
+  system_critical = {
     deployment_ring = "ga"
     delay_hours     = "4"
   }
 
-  sensor_operations {
-    deployment_ring = "ea"
-  }
-
-  rapid_response {
+  sensor_operations = {
     deployment_ring = "ga"
   }
 
-  vulnerability_management {
+  rapid_response = {
     deployment_ring = "ga"
   }
-} 
+
+  vulnerability_management = {
+    deployment_ring = "ga"
+  }
+}
