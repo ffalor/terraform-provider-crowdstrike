@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/crowdstrike/gofalcon/falcon"
+	devicecontrolpolicy "github.com/crowdstrike/terraform-provider-crowdstrike/internal/device_control_policy"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/fcs"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/fim"
 	preventionpolicy "github.com/crowdstrike/terraform-provider-crowdstrike/internal/prevention_policy"
@@ -243,6 +244,7 @@ func (p *CrowdStrikeProvider) Resources(ctx context.Context) []func() resource.R
 		preventionpolicy.NewPreventionPolicyMacResource,
 		preventionpolicy.NewPreventionPolicyAttachmentResource,
 		preventionpolicy.NewPreventionPolicyPrecedenceResource,
+		devicecontrolpolicy.NewDeviceControlPolicyResource,
 		fim.NewFIMPolicyResource,
 		fim.NewFilevantageRuleGroupResource,
 		fcs.NewCloudAWSAccountResource,
