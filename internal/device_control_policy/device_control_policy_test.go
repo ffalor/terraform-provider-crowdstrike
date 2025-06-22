@@ -41,9 +41,6 @@ func TestAccDeviceControlPolicyResource_basic(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"last_updated",
-				},
 			},
 		},
 	})

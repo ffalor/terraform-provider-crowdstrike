@@ -54,7 +54,6 @@ type deviceControlPolicyResourceModel struct {
 	PlatformName types.String `tfsdk:"platform_name"`
 	Enabled      types.Bool   `tfsdk:"enabled"`
 	HostGroups   types.Set    `tfsdk:"host_groups"`
-	LastUpdated  types.String `tfsdk:"last_updated"`
 
 	// Settings
 	EndUserNotification  types.String `tfsdk:"end_user_notification"`
@@ -150,10 +149,6 @@ func (r *deviceControlPolicyResource) Schema(
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
-			},
-			"last_updated": schema.StringAttribute{
-				Computed:    true,
-				Description: "Timestamp of the last Terraform update of the resource.",
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -463,6 +458,9 @@ func (r *deviceControlPolicyResource) Update(
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// Mark modified timestamp unknown so Terraform doesn't compare pre/post values
+	plan.ModifiedTimestamp = types.StringUnknown()
 
 	// Build update request
 	settings, diags := r.buildSettingsFromPlan(ctx, plan)
