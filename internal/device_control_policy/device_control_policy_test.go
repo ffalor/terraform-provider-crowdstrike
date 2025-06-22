@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/acctest"
+	sdkacctest "github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccDeviceControlPolicyResource_basic(t *testing.T) {
@@ -17,10 +19,10 @@ func TestAccDeviceControlPolicyResource_basic(t *testing.T) {
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDeviceControlPolicyConfig_basic(),
+				Config: testAccDeviceControlPolicyConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckDeviceControlPolicyExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "name", "Test Device Control Policy"),
+					resource.TestCheckResourceAttr(resourceName, "name", rName),
 					resource.TestCheckResourceAttr(resourceName, "description", "Test device control policy created by Terraform"),
 					resource.TestCheckResourceAttr(resourceName, "platform_name", "Windows"),
 					resource.TestCheckResourceAttr(resourceName, "end_user_notification", "SILENT"),
@@ -57,6 +59,7 @@ func TestAccDeviceControlPolicyResource_withClasses(t *testing.T) {
 			{
 				Config: testAccDeviceControlPolicyConfig_withClasses(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckDeviceControlPolicyExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", rName),
 					resource.TestCheckResourceAttr(resourceName, "platform_name", "Windows"),
 					resource.TestCheckResourceAttr(resourceName, "enforcement_mode", "MONITOR_ENFORCE"),
@@ -78,10 +81,10 @@ func TestAccDeviceControlPolicyResource_update(t *testing.T) {
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDeviceControlPolicyConfig_basic(),
+				Config: testAccDeviceControlPolicyConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckDeviceControlPolicyExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "name", "Test Device Control Policy"),
+					resource.TestCheckResourceAttr(resourceName, "name", rName),
 					resource.TestCheckResourceAttr(resourceName, "end_user_notification", "SILENT"),
 					resource.TestCheckResourceAttr(resourceName, "enforcement_mode", "MONITOR_ONLY"),
 				),
@@ -89,6 +92,7 @@ func TestAccDeviceControlPolicyResource_update(t *testing.T) {
 			{
 				Config: testAccDeviceControlPolicyConfig_updated(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckDeviceControlPolicyExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", rName+"-updated"),
 					resource.TestCheckResourceAttr(resourceName, "description", "Updated device control policy description"),
 					resource.TestCheckResourceAttr(resourceName, "end_user_notification", "NOTIFY_USER"),
@@ -98,6 +102,21 @@ func TestAccDeviceControlPolicyResource_update(t *testing.T) {
 			},
 		},
 	})
+}
+
+func testAccCheckDeviceControlPolicyExists(n string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No Device Control Policy ID is set")
+		}
+
+		return nil
+	}
 }
 
 func testAccDeviceControlPolicyConfig_basic(rName string) string {
