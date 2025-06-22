@@ -49,6 +49,34 @@ func TestAccDeviceControlPolicyResource_basic(t *testing.T) {
 	})
 }
 
+func TestAccDeviceControlPolicyResource_update(t *testing.T) {
+	rName := sdkacctest.RandomWithPrefix("tf-acceptance-test")
+	resourceName := "crowdstrike_device_control_policy.test"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDeviceControlPolicyConfig_basic(rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckDeviceControlPolicyExists(resourceName),
+					resource.TestCheckResourceAttr(resourceName, "name", rName),
+					resource.TestCheckResourceAttr(resourceName, "description", "Test device control policy created by Terraform"),
+				),
+			},
+			{
+				Config: testAccDeviceControlPolicyConfig_updated(rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckDeviceControlPolicyExists(resourceName),
+					resource.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("%s-updated", rName)),
+					resource.TestCheckResourceAttr(resourceName, "description", "Updated device control policy description"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckDeviceControlPolicyExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -69,6 +97,16 @@ func testAccDeviceControlPolicyConfig_basic(rName string) string {
 resource "crowdstrike_device_control_policy" "test" {
   name         = "%s"
   description  = "Test device control policy created by Terraform"
+  platform_name = "Windows"
+}
+`, rName)
+}
+
+func testAccDeviceControlPolicyConfig_updated(rName string) string {
+	return acctest.ProviderConfig + fmt.Sprintf(`
+resource "crowdstrike_device_control_policy" "test" {
+  name          = "%s-updated"
+  description   = "Updated device control policy description"
   platform_name = "Windows"
 }
 `, rName)
