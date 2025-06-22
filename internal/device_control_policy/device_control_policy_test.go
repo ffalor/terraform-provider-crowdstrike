@@ -146,7 +146,7 @@ resource "crowdstrike_device_control_policy" "test" {
   
   classes = [
     {
-      id     = "08"  # Mass Storage
+      id     = "MASS_STORAGE"
       action = "BLOCK_EXECUTE"
       exceptions = [
         {
@@ -157,7 +157,7 @@ resource "crowdstrike_device_control_policy" "test" {
       ]
     },
     {
-      id     = "03"  # HID
+      id     = "HID"
       action = "FULL_ACCESS"
     }
   ]

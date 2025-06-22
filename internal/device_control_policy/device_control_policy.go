@@ -207,6 +207,7 @@ func (r *deviceControlPolicyResource) Schema(
 			},
 			"classes": schema.SetNestedAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "USB device class settings for the policy.",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
@@ -586,12 +587,12 @@ func (r *deviceControlPolicyResource) ValidateConfig(
 			}
 
 			// Validate BLOCK_EXECUTE is only used for MASS_STORAGE
-			if class.Action.ValueString() == "BLOCK_EXECUTE" && class.ID.ValueString() != "08" {
+			if class.Action.ValueString() == "BLOCK_EXECUTE" && class.ID.ValueString() != "MASS_STORAGE" {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("classes").AtSetValue(types.ObjectValueMust(
 						class.AttributeTypes(), class.AttributeValues())),
 					"Invalid action for USB class",
-					fmt.Sprintf("BLOCK_EXECUTE action can only be used with USB class '08' (Mass Storage), but was used with class '%s'", class.ID.ValueString()),
+					fmt.Sprintf("BLOCK_EXECUTE action can only be used with USB class 'MASS_STORAGE', but was used with class '%s'", class.ID.ValueString()),
 				)
 			}
 		}
@@ -672,14 +673,36 @@ func (r *deviceControlPolicyResource) updatePlanFromPolicy(
 		plan.EnforcementMode = types.StringValue(getStringValue(policy.Settings.EnforcementMode))
 		plan.EnhancedFileMetadata = types.BoolValue(getBoolValue(policy.Settings.EnhancedFileMetadata))
 
-		// Handle classes
+		// Handle classes - only update if the plan specified classes or if the API returned classes
 		if policy.Settings.Classes != nil && len(policy.Settings.Classes) > 0 {
 			classesSet, classesDiags := r.convertClassesToSet(ctx, policy.Settings.Classes)
 			diags.Append(classesDiags...)
 			if diags.HasError() {
 				return diags
 			}
-			plan.Classes = classesSet
+
+			// Only set classes if they were specified in the config or if there are real changes
+			if !plan.Classes.IsNull() {
+				plan.Classes = classesSet
+			} else {
+				// If no classes were configured, ignore API defaults
+				plan.Classes = types.SetNull(types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"id":     types.StringType,
+						"action": types.StringType,
+						"exceptions": types.SetType{ElemType: types.ObjectType{AttrTypes: map[string]attr.Type{
+							"action":        types.StringType,
+							"combined_id":   types.StringType,
+							"description":   types.StringType,
+							"product_id":    types.StringType,
+							"product_name":  types.StringType,
+							"serial_number": types.StringType,
+							"vendor_id":     types.StringType,
+							"vendor_name":   types.StringType,
+						}}},
+					},
+				})
+			}
 		}
 	}
 
