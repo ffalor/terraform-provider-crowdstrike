@@ -19,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -175,6 +176,9 @@ func (r *deviceControlPolicyResource) Schema(
 			"enabled": schema.BoolAttribute{
 				Computed:    true,
 				Description: "Whether the device control policy is enabled.",
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"host_groups": schema.SetAttribute{
 				Optional:    true,
@@ -193,11 +197,11 @@ func (r *deviceControlPolicyResource) Schema(
 			"enforcement_mode": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "How the policy is enforced (MONITOR_ONLY, MONITOR_ENFORCE).",
+				Description: "How the policy is enforced (MONITOR_ONLY, MONITOR_ENFORCE, OFF).",
 				Validators: []validator.String{
-					stringvalidator.OneOf("MONITOR_ONLY", "MONITOR_ENFORCE"),
+					stringvalidator.OneOf("MONITOR_ONLY", "MONITOR_ENFORCE", "OFF"),
 				},
-				Default: stringdefault.StaticString("MONITOR_ONLY"),
+				Default: stringdefault.StaticString("MONITOR_ENFORCE"),
 			},
 			"enhanced_file_metadata": schema.BoolAttribute{
 				Optional:    true,
@@ -213,7 +217,7 @@ func (r *deviceControlPolicyResource) Schema(
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
 							Required:    true,
-							Description: "USB class identifier (e.g., '01', '03', '08', '09', '0E').",
+							Description: "USB class identifier (ANY, AUDIO_VIDEO, IMAGING, MASS_STORAGE, MOBILE, PRINTER, WIRELESS).",
 						},
 						"action": schema.StringAttribute{
 							Required:    true,
@@ -274,18 +278,30 @@ func (r *deviceControlPolicyResource) Schema(
 			"created_by": schema.StringAttribute{
 				Computed:    true,
 				Description: "Email of the user who created the policy.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"created_timestamp": schema.StringAttribute{
 				Computed:    true,
 				Description: "Timestamp when the policy was created.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"modified_by": schema.StringAttribute{
 				Computed:    true,
 				Description: "Email of the user who last modified the policy.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"modified_timestamp": schema.StringAttribute{
 				Computed:    true,
 				Description: "Timestamp when the policy was last modified.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -316,7 +332,10 @@ func (r *deviceControlPolicyResource) Create(
 	}
 
 	// Add settings if any configuration is provided
-	if !plan.Classes.IsNull() || !plan.EndUserNotification.IsNull() || !plan.EnforcementMode.IsNull() || !plan.EnhancedFileMetadata.IsNull() {
+	if (!plan.Classes.IsNull() && !plan.Classes.IsUnknown()) ||
+		(!plan.EndUserNotification.IsNull() && !plan.EndUserNotification.IsUnknown()) ||
+		(!plan.EnforcementMode.IsNull() && !plan.EnforcementMode.IsUnknown()) ||
+		(!plan.EnhancedFileMetadata.IsNull() && !plan.EnhancedFileMetadata.IsUnknown()) {
 		settings, diags := r.buildSettingsFromPlan(ctx, plan)
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
@@ -560,7 +579,7 @@ func (r *deviceControlPolicyResource) ValidateConfig(
 	resp.Diagnostics.Append(utils.ValidateEmptyIDs(ctx, config.HostGroups, "host_groups")...)
 
 	// Validate that if classes are provided, each class has at least an ID and action
-	if !config.Classes.IsNull() {
+	if !config.Classes.IsNull() && !config.Classes.IsUnknown() {
 		var classes []usbClassModel
 		resp.Diagnostics.Append(config.Classes.ElementsAs(ctx, &classes, false)...)
 		if resp.Diagnostics.HasError() {
@@ -673,36 +692,14 @@ func (r *deviceControlPolicyResource) updatePlanFromPolicy(
 		plan.EnforcementMode = types.StringValue(getStringValue(policy.Settings.EnforcementMode))
 		plan.EnhancedFileMetadata = types.BoolValue(getBoolValue(policy.Settings.EnhancedFileMetadata))
 
-		// Handle classes - only update if the plan specified classes or if the API returned classes
+		// Handle classes - the API always returns all 7 USB classes
 		if policy.Settings.Classes != nil && len(policy.Settings.Classes) > 0 {
 			classesSet, classesDiags := r.convertClassesToSet(ctx, policy.Settings.Classes)
 			diags.Append(classesDiags...)
 			if diags.HasError() {
 				return diags
 			}
-
-			// Only set classes if they were specified in the config or if there are real changes
-			if !plan.Classes.IsNull() {
-				plan.Classes = classesSet
-			} else {
-				// If no classes were configured, ignore API defaults
-				plan.Classes = types.SetNull(types.ObjectType{
-					AttrTypes: map[string]attr.Type{
-						"id":     types.StringType,
-						"action": types.StringType,
-						"exceptions": types.SetType{ElemType: types.ObjectType{AttrTypes: map[string]attr.Type{
-							"action":        types.StringType,
-							"combined_id":   types.StringType,
-							"description":   types.StringType,
-							"product_id":    types.StringType,
-							"product_name":  types.StringType,
-							"serial_number": types.StringType,
-							"vendor_id":     types.StringType,
-							"vendor_name":   types.StringType,
-						}}},
-					},
-				})
-			}
+			plan.Classes = classesSet
 		}
 	}
 
@@ -725,7 +722,7 @@ func (r *deviceControlPolicyResource) buildSettingsFromPlan(
 
 	// Build classes
 	var classes []*models.DeviceControlUSBClassExceptionsReqV1
-	if !plan.Classes.IsNull() {
+	if !plan.Classes.IsNull() && !plan.Classes.IsUnknown() {
 		var planClasses []usbClassModel
 		diags.Append(plan.Classes.ElementsAs(ctx, &planClasses, false)...)
 		if diags.HasError() {
