@@ -61,6 +61,7 @@ resource "crowdstrike_firewall_policy" "test" {
   description   = "Terraform acceptance test firewall policy"
   platform_name = "Windows"
   enabled       = false
+  host_groups   = []
 }
 `, name)
 }
