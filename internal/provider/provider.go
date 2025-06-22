@@ -12,6 +12,7 @@ import (
 	"github.com/crowdstrike/gofalcon/falcon"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/fcs"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/fim"
+	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/firewall"
 	preventionpolicy "github.com/crowdstrike/terraform-provider-crowdstrike/internal/prevention_policy"
 	sensorupdatepolicy "github.com/crowdstrike/terraform-provider-crowdstrike/internal/sensor_update_policy"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -248,6 +249,9 @@ func (p *CrowdStrikeProvider) Resources(ctx context.Context) []func() resource.R
 		fcs.NewCloudAWSAccountResource,
 		fcs.NewCloudAzureTenantEventhubSettingsResource,
 		fcs.NewCloudAzureTenantResource,
+		firewall.NewFirewallPolicyResource,
+		firewall.NewFirewallRuleGroupResource,
+		firewall.NewFirewallRuleResource,
 	}
 }
 

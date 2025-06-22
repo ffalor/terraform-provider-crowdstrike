@@ -1,4 +1,4 @@
-THIS SHOULD BE A LINTER ERRORpackage firewall
+package firewall
 
 import (
 	"context"
@@ -263,13 +263,13 @@ func (r *firewallPolicyResource) Read(
 	state.PlatformName = types.StringValue(*firewallPolicy.PlatformName)
 	state.Enabled = types.BoolValue(*firewallPolicy.Enabled)
 
-	// Get assigned host groups
-	hostGroups, diags := r.getAssignedHostGroups(ctx, state.ID.ValueString())
-	resp.Diagnostics.Append(diags...)
+	// Get assigned host groups - for now use empty set as this requires more complex logic
+	emptySet, setDiags := types.SetValueFrom(ctx, types.StringType, []string{})
+	resp.Diagnostics.Append(setDiags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	state.HostGroups = hostGroups
+	state.HostGroups = emptySet
 
 	// Set refreshed state
 	diags = resp.State.Set(ctx, &state)
@@ -304,7 +304,7 @@ func (r *firewallPolicyResource) Update(
 				Resources: []*models.FirewallUpdateFirewallPolicyReqV1{
 					{
 						ID:          plan.ID.ValueStringPointer(),
-						Name:        plan.Name.ValueStringPointer(),
+						Name:        plan.Name.ValueString(),
 						Description: plan.Description.ValueString(),
 					},
 				},
@@ -476,32 +476,6 @@ func (r *firewallPolicyResource) assignHostGroups(ctx context.Context, policyID 
 	}
 
 	return diags
-}
-
-// getAssignedHostGroups retrieves host groups assigned to the firewall policy
-func (r *firewallPolicyResource) getAssignedHostGroups(ctx context.Context, policyID string) (types.Set, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
-	// Query for assigned members
-	res, err := r.client.FirewallPolicies.QueryFirewallPolicyMembers(
-		&firewall_policies.QueryFirewallPolicyMembersParams{
-			Context: ctx,
-			ID:      &policyID,
-		},
-	)
-
-	if err != nil {
-		diags.AddError(
-			"Error querying firewall policy members",
-			fmt.Sprintf("Could not query members for firewall policy %s: %s", policyID, err.Error()),
-		)
-		return types.SetNull(types.StringType), diags
-	}
-
-	// For now, return empty set - this would need to be implemented based on actual API response
-	emptySet, setDiags := types.SetValueFrom(ctx, types.StringType, []string{})
-	diags.Append(setDiags...)
-	return emptySet, diags
 }
 
 // syncHostGroups synchronizes host group assignments
