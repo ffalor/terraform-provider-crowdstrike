@@ -3,7 +3,6 @@ package devicecontrolpolicy
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/crowdstrike/gofalcon/falcon/client"
 	"github.com/crowdstrike/gofalcon/falcon/client/device_control_policies"
@@ -372,7 +371,6 @@ func (r *deviceControlPolicyResource) Create(
 
 	policy := response.Payload.Resources[0]
 	plan.ID = types.StringValue(*policy.ID)
-	plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
 	// Update plan with actual values from API response
 	diags = r.updatePlanFromPolicy(ctx, &plan, policy)
@@ -441,9 +439,6 @@ func (r *deviceControlPolicyResource) Read(
 	// Update state with values from API
 	diags = r.updatePlanFromPolicy(ctx, &state, policy)
 	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -510,7 +505,6 @@ func (r *deviceControlPolicyResource) Update(
 	}
 
 	policy := response.Payload.Resources[0]
-	plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
 	// Update plan with actual values from API response
 	diags = r.updatePlanFromPolicy(ctx, &plan, policy)
