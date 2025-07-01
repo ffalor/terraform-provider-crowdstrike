@@ -39,28 +39,20 @@ var (
 	_ resource.ResourceWithValidateConfig = &contentPolicyResource{}
 )
 
-// Valid content categories
-var validContentCategories = []string{
-	"sensor_operations",
-	"system_critical",
-	"vulnerability_management",
-	"rapid_response_al_bl_listing",
-}
-
-// Valid ring assignments
+// Valid ring assignments.
 var validRingAssignments = []string{
 	"ga",    // general availability
 	"ea",    // early access
 	"pause", // pause updates
 }
 
-// Valid ring assignments for system_critical (no pause allowed)
+// Valid ring assignments for system_critical (no pause allowed).
 var validSystemCriticalRingAssignments = []string{
 	"ga", // general availability
 	"ea", // early access
 }
 
-// Valid delay hours for GA ring
+// Valid delay hours for GA ring.
 var validDelayHours = []int64{0, 1, 2, 4, 8, 12, 24, 48, 72}
 
 // NewContentPolicyResource is a helper function to simplify the provider implementation.
@@ -92,13 +84,13 @@ type contentPolicyResourceModel struct {
 	rapidResponse           *ringAssignmentModel `tfsdk:"-"`
 }
 
-// ringAssignmentModel represents a content category ring assignment
+// ringAssignmentModel represents a content category ring assignment.
 type ringAssignmentModel struct {
 	RingAssignment types.String `tfsdk:"ring_assignment"`
 	DelayHours     types.Int64  `tfsdk:"delay_hours"`
 }
 
-// AttributeTypes returns the attribute types for the ring assignment model
+// AttributeTypes returns the attribute types for the ring assignment model.
 func (r ringAssignmentModel) AttributeTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"ring_assignment": types.StringType,

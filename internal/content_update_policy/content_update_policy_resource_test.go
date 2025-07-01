@@ -444,34 +444,6 @@ resource "crowdstrike_content_update_policy" "test" {
 `, name)
 }
 
-func testAccContentUpdatePolicyResourceConfigWithHostGroupsRemove(name string) string {
-	return fmt.Sprintf(`
-resource "crowdstrike_content_update_policy" "test" {
-  name        = %[1]q
-  description = "Test content update policy without host groups"
-  enabled     = true
-
-  sensor_operations = {
-    ring_assignment = "ga"
-    delay_hours     = 0
-  }
-
-  system_critical = {
-    ring_assignment = "ga"
-    delay_hours     = 24
-  }
-
-  vulnerability_management = {
-    ring_assignment = "ea"
-  }
-
-  rapid_response = {
-    ring_assignment = "pause"
-  }
-}
-`, name)
-}
-
 func testAccContentUpdatePolicyResourceConfigAllGA(name string) string {
 	return fmt.Sprintf(`
 resource "crowdstrike_content_update_policy" "test" {
