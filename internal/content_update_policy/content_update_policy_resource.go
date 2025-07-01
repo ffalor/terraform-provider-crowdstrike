@@ -102,28 +102,24 @@ func (r ringAssignmentModel) AttributeTypes() map[string]attr.Type {
 func (d *contentPolicyResourceModel) extract(ctx context.Context) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	// Extract sensor_operations
 	if !d.SensorOperations.IsNull() {
 		var sensorOps ringAssignmentModel
 		diags.Append(d.SensorOperations.As(ctx, &sensorOps, basetypes.ObjectAsOptions{})...)
 		d.sensorOperations = &sensorOps
 	}
 
-	// Extract system_critical
 	if !d.SystemCritical.IsNull() {
 		var systemCrit ringAssignmentModel
 		diags.Append(d.SystemCritical.As(ctx, &systemCrit, basetypes.ObjectAsOptions{})...)
 		d.systemCritical = &systemCrit
 	}
 
-	// Extract vulnerability_management
 	if !d.VulnerabilityManagement.IsNull() {
 		var vulnMgmt ringAssignmentModel
 		diags.Append(d.VulnerabilityManagement.As(ctx, &vulnMgmt, basetypes.ObjectAsOptions{})...)
 		d.vulnerabilityManagement = &vulnMgmt
 	}
 
-	// Extract rapid_response
 	if !d.RapidResponse.IsNull() {
 		var rapidResp ringAssignmentModel
 		diags.Append(d.RapidResponse.As(ctx, &rapidResp, basetypes.ObjectAsOptions{})...)
@@ -421,10 +417,8 @@ func (r *contentPolicyResource) Create(
 		return
 	}
 
-	// Build ring assignment settings from individual blocks
 	ringAssignmentSettings := make([]*models.ContentUpdateRingAssignmentSettingsReqV1, 0, 4)
 
-	// Add sensor_operations
 	if plan.sensorOperations != nil {
 		delayHours := int64(0)
 		if !plan.sensorOperations.DelayHours.IsNull() {
@@ -440,7 +434,6 @@ func (r *contentPolicyResource) Create(
 		ringAssignmentSettings = append(ringAssignmentSettings, setting)
 	}
 
-	// Add system_critical
 	if plan.systemCritical != nil {
 		delayHours := int64(0)
 		if !plan.systemCritical.DelayHours.IsNull() {
@@ -456,7 +449,6 @@ func (r *contentPolicyResource) Create(
 		ringAssignmentSettings = append(ringAssignmentSettings, setting)
 	}
 
-	// Add vulnerability_management
 	if plan.vulnerabilityManagement != nil {
 		delayHours := int64(0)
 		if !plan.vulnerabilityManagement.DelayHours.IsNull() {
@@ -472,7 +464,6 @@ func (r *contentPolicyResource) Create(
 		ringAssignmentSettings = append(ringAssignmentSettings, setting)
 	}
 
-	// Add rapid_response_al_bl_listing
 	if plan.rapidResponse != nil {
 		delayHours := int64(0)
 		if !plan.rapidResponse.DelayHours.IsNull() {
@@ -669,10 +660,8 @@ func (r *contentPolicyResource) Update(
 		}
 	}
 
-	// Build ring assignment settings for update from individual blocks
 	ringAssignmentSettings := make([]*models.ContentUpdateRingAssignmentSettingsReqV1, 0, 4)
 
-	// Add sensor_operations
 	if plan.sensorOperations != nil {
 		delayHours := int64(0)
 		if !plan.sensorOperations.DelayHours.IsNull() {
@@ -688,7 +677,6 @@ func (r *contentPolicyResource) Update(
 		ringAssignmentSettings = append(ringAssignmentSettings, setting)
 	}
 
-	// Add system_critical
 	if plan.systemCritical != nil {
 		delayHours := int64(0)
 		if !plan.systemCritical.DelayHours.IsNull() {
@@ -704,7 +692,6 @@ func (r *contentPolicyResource) Update(
 		ringAssignmentSettings = append(ringAssignmentSettings, setting)
 	}
 
-	// Add vulnerability_management
 	if plan.vulnerabilityManagement != nil {
 		delayHours := int64(0)
 		if !plan.vulnerabilityManagement.DelayHours.IsNull() {
@@ -720,7 +707,6 @@ func (r *contentPolicyResource) Update(
 		ringAssignmentSettings = append(ringAssignmentSettings, setting)
 	}
 
-	// Add rapid_response_al_bl_listing
 	if plan.rapidResponse != nil {
 		delayHours := int64(0)
 		if !plan.rapidResponse.DelayHours.IsNull() {
@@ -736,7 +722,6 @@ func (r *contentPolicyResource) Update(
 		ringAssignmentSettings = append(ringAssignmentSettings, setting)
 	}
 
-	// Update policy
 	policyParams := content_update_policies.UpdateContentUpdatePoliciesParams{
 		Context: ctx,
 		Body: &models.ContentUpdateUpdatePoliciesReqV1{
@@ -866,8 +851,6 @@ func (r *contentPolicyResource) ValidateConfig(
 
 	resp.Diagnostics.Append(utils.ValidateEmptyIDs(ctx, config.HostGroups, "host_groups")...)
 
-	// Validate individual ring assignment blocks
-	// Validate sensor_operations
 	if config.sensorOperations != nil {
 		if config.sensorOperations.RingAssignment.ValueString() != "ga" && !config.sensorOperations.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
@@ -879,7 +862,6 @@ func (r *contentPolicyResource) ValidateConfig(
 		}
 	}
 
-	// Validate system_critical
 	if config.systemCritical != nil {
 		if config.systemCritical.RingAssignment.ValueString() != "ga" && !config.systemCritical.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
@@ -891,7 +873,6 @@ func (r *contentPolicyResource) ValidateConfig(
 		}
 	}
 
-	// Validate vulnerability_management
 	if config.vulnerabilityManagement != nil {
 		if config.vulnerabilityManagement.RingAssignment.ValueString() != "ga" && !config.vulnerabilityManagement.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
@@ -903,7 +884,6 @@ func (r *contentPolicyResource) ValidateConfig(
 		}
 	}
 
-	// Validate rapid_response
 	if config.rapidResponse != nil {
 		if config.rapidResponse.RingAssignment.ValueString() != "ga" && !config.rapidResponse.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
