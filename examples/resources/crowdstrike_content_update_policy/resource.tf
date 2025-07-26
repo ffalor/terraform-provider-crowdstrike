@@ -141,3 +141,30 @@ resource "crowdstrike_content_update_policy" "early_access" {
     crowdstrike_host_group.test.id
   ]
 }
+
+# Content update policy with pinned channel file versions
+resource "crowdstrike_content_update_policy" "pinned_versions" {
+  name        = "Pinned Version Content Policy"
+  description = "Content update policy with specific channel file version pinning"
+  enabled     = true
+
+  sensor_operations = {
+    ring_assignment        = "ga"
+    pinned_content_version = "1234567890abcdef"
+    # Note: pinned_content_version cannot be used with delay_hours
+  }
+
+  system_critical = {
+    ring_assignment = "ga"
+    delay_hours     = 24 # Standard delay for critical updates
+  }
+
+  vulnerability_management = {
+    ring_assignment        = "ea"
+    pinned_content_version = "fedcba0987654321"
+  }
+
+  rapid_response = {
+    ring_assignment = "pause"
+  }
+}
