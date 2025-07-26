@@ -54,6 +54,27 @@ var validSystemCriticalRingAssignments = []string{
 // Valid delay hours for GA ring.
 var validDelayHours = []int64{0, 1, 2, 4, 8, 12, 24, 48, 72}
 
+// extendedRingAssignmentSettingsReq extends the standard request model to include pinned content version.
+type extendedRingAssignmentSettingsReq struct {
+	ID                   *string `json:"id"`
+	RingAssignment       *string `json:"ring_assignment"`
+	DelayHours           *string `json:"delay_hours"`
+	PinnedContentVersion *string `json:"pinned_content_version,omitempty"`
+}
+
+// convertToStandardSettings converts extended settings to the standard API model for compatibility.
+func convertToStandardSettings(extendedSettings []*extendedRingAssignmentSettingsReq) []*models.ContentUpdateRingAssignmentSettingsReqV1 {
+	standardSettings := make([]*models.ContentUpdateRingAssignmentSettingsReqV1, len(extendedSettings))
+	for i, ext := range extendedSettings {
+		standardSettings[i] = &models.ContentUpdateRingAssignmentSettingsReqV1{
+			ID:             ext.ID,
+			RingAssignment: ext.RingAssignment,
+			DelayHours:     ext.DelayHours,
+		}
+	}
+	return standardSettings
+}
+
 // NewContentPolicyResource is a helper function to simplify the provider implementation.
 func NewContentPolicyResource() resource.Resource {
 	return &contentPolicyResource{}
@@ -85,15 +106,17 @@ type contentPolicyResourceModel struct {
 
 // ringAssignmentModel represents a content category ring assignment.
 type ringAssignmentModel struct {
-	RingAssignment types.String `tfsdk:"ring_assignment"`
-	DelayHours     types.Int64  `tfsdk:"delay_hours"`
+	RingAssignment       types.String `tfsdk:"ring_assignment"`
+	DelayHours           types.Int64  `tfsdk:"delay_hours"`
+	PinnedContentVersion types.String `tfsdk:"pinned_content_version"`
 }
 
 // AttributeTypes returns the attribute types for the ring assignment model.
 func (r ringAssignmentModel) AttributeTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"ring_assignment": types.StringType,
-		"delay_hours":     types.Int64Type,
+		"ring_assignment":        types.StringType,
+		"delay_hours":            types.Int64Type,
+		"pinned_content_version": types.StringType,
 	}
 }
 
@@ -216,6 +239,13 @@ func (d *contentPolicyResourceModel) wrap(
 				ringAssignment.DelayHours = types.Int64Value(delayHours)
 			} else {
 				ringAssignment.DelayHours = types.Int64Null()
+			}
+
+			// Extract pinned content version if present
+			if setting.PinnedContentVersion != nil && *setting.PinnedContentVersion != "" {
+				ringAssignment.PinnedContentVersion = types.StringValue(*setting.PinnedContentVersion)
+			} else {
+				ringAssignment.PinnedContentVersion = types.StringNull()
 			}
 
 			objValue, diag := types.ObjectValueFrom(ctx, ringAssignment.AttributeTypes(), ringAssignment)
@@ -347,6 +377,10 @@ func (r *contentPolicyResource) Schema(
 							int64validator.OneOf(validDelayHours...),
 						},
 					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin to a specific channel file version. When specified, content updates will use this specific version instead of following the ring assignment schedule.",
+					},
 				},
 			},
 			"system_critical": schema.SingleNestedAttribute{
@@ -366,6 +400,10 @@ func (r *contentPolicyResource) Schema(
 						Validators: []validator.Int64{
 							int64validator.OneOf(validDelayHours...),
 						},
+					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin to a specific channel file version. When specified, content updates will use this specific version instead of following the ring assignment schedule.",
 					},
 				},
 			},
@@ -387,6 +425,10 @@ func (r *contentPolicyResource) Schema(
 							int64validator.OneOf(validDelayHours...),
 						},
 					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin to a specific channel file version. When specified, content updates will use this specific version instead of following the ring assignment schedule.",
+					},
 				},
 			},
 			"rapid_response": schema.SingleNestedAttribute{
@@ -406,6 +448,10 @@ func (r *contentPolicyResource) Schema(
 						Validators: []validator.Int64{
 							int64validator.OneOf(validDelayHours...),
 						},
+					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin to a specific channel file version. When specified, content updates will use this specific version instead of following the ring assignment schedule.",
 					},
 				},
 			},
@@ -858,6 +904,14 @@ func (r *contentPolicyResource) ValidateConfig(
 					config.sensorOperations.RingAssignment.ValueString()),
 			)
 		}
+		// Validate that pinned_content_version is not used with delay_hours
+		if !config.sensorOperations.PinnedContentVersion.IsNull() && !config.sensorOperations.DelayHours.IsNull() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("sensor_operations").AtName("pinned_content_version"),
+				"Invalid pinned_content_version configuration",
+				"pinned_content_version cannot be used together with delay_hours. When pinning to a specific version, delay_hours should not be set.",
+			)
+		}
 	}
 
 	if config.systemCritical != nil {
@@ -867,6 +921,14 @@ func (r *contentPolicyResource) ValidateConfig(
 				"Invalid delay_hours configuration",
 				fmt.Sprintf("delay_hours can only be set when ring_assignment is 'ga'. system_critical has ring_assignment '%s' but delay_hours is set.",
 					config.systemCritical.RingAssignment.ValueString()),
+			)
+		}
+		// Validate that pinned_content_version is not used with delay_hours
+		if !config.systemCritical.PinnedContentVersion.IsNull() && !config.systemCritical.DelayHours.IsNull() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("system_critical").AtName("pinned_content_version"),
+				"Invalid pinned_content_version configuration",
+				"pinned_content_version cannot be used together with delay_hours. When pinning to a specific version, delay_hours should not be set.",
 			)
 		}
 	}
@@ -880,6 +942,14 @@ func (r *contentPolicyResource) ValidateConfig(
 					config.vulnerabilityManagement.RingAssignment.ValueString()),
 			)
 		}
+		// Validate that pinned_content_version is not used with delay_hours
+		if !config.vulnerabilityManagement.PinnedContentVersion.IsNull() && !config.vulnerabilityManagement.DelayHours.IsNull() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("vulnerability_management").AtName("pinned_content_version"),
+				"Invalid pinned_content_version configuration",
+				"pinned_content_version cannot be used together with delay_hours. When pinning to a specific version, delay_hours should not be set.",
+			)
+		}
 	}
 
 	if config.rapidResponse != nil {
@@ -889,6 +959,14 @@ func (r *contentPolicyResource) ValidateConfig(
 				"Invalid delay_hours configuration",
 				fmt.Sprintf("delay_hours can only be set when ring_assignment is 'ga'. rapid_response has ring_assignment '%s' but delay_hours is set.",
 					config.rapidResponse.RingAssignment.ValueString()),
+			)
+		}
+		// Validate that pinned_content_version is not used with delay_hours
+		if !config.rapidResponse.PinnedContentVersion.IsNull() && !config.rapidResponse.DelayHours.IsNull() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("rapid_response").AtName("pinned_content_version"),
+				"Invalid pinned_content_version configuration",
+				"pinned_content_version cannot be used together with delay_hours. When pinning to a specific version, delay_hours should not be set.",
 			)
 		}
 	}
