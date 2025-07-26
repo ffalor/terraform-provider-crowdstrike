@@ -14,8 +14,9 @@ import (
 
 // ringConfig represents a ring assignment configuration.
 type ringConfig struct {
-	RingAssignment string
-	DelayHours     *int
+	RingAssignment       string
+	DelayHours           *int
+	PinnedContentVersion *string
 }
 
 // policyConfig represents a complete policy configuration.
@@ -67,30 +68,34 @@ resource "crowdstrike_content_update_policy" "test" {
   sensor_operations = {
     ring_assignment = %q
 	%s
+	%s
   }
 
   system_critical = {
     ring_assignment = %q
+	%s
 	%s
   }
 
   vulnerability_management = {
     ring_assignment = %q
 	%s
+	%s
   }
 
   rapid_response = {
     ring_assignment = %q
+	%s
 	%s
   }
   
   %s
 }
 `, hostGroupResources, config.Name, config.Description, config.formatEnabled(),
-		config.SensorOperations.RingAssignment, config.SensorOperations.formatDelayHours(),
-		config.SystemCritical.RingAssignment, config.SystemCritical.formatDelayHours(),
-		config.VulnerabilityManagement.RingAssignment, config.VulnerabilityManagement.formatDelayHours(),
-		config.RapidResponse.RingAssignment, config.RapidResponse.formatDelayHours(),
+		config.SensorOperations.RingAssignment, config.SensorOperations.formatDelayHours(), config.SensorOperations.formatPinnedContentVersion(),
+		config.SystemCritical.RingAssignment, config.SystemCritical.formatDelayHours(), config.SystemCritical.formatPinnedContentVersion(),
+		config.VulnerabilityManagement.RingAssignment, config.VulnerabilityManagement.formatDelayHours(), config.VulnerabilityManagement.formatPinnedContentVersion(),
+		config.RapidResponse.RingAssignment, config.RapidResponse.formatDelayHours(), config.RapidResponse.formatPinnedContentVersion(),
 		hostGroupsBlock)
 }
 
@@ -107,6 +112,13 @@ func (config ringConfig) formatDelayHours() string {
 		return ""
 	}
 	return fmt.Sprintf("delay_hours     = %d", *config.DelayHours)
+}
+
+func (config ringConfig) formatPinnedContentVersion() string {
+	if config.PinnedContentVersion == nil {
+		return ""
+	}
+	return fmt.Sprintf("pinned_content_version = %q", *config.PinnedContentVersion)
 }
 
 func (config policyConfig) resourceName() string {
@@ -154,6 +166,12 @@ func (ring ringConfig) generateChecks(category string) []resource.TestCheckFunc 
 		} else {
 			checks = append(checks, resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", category+".delay_hours", "0"))
 		}
+	}
+
+	if ring.PinnedContentVersion != nil {
+		checks = append(checks, resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", category+".pinned_content_version", *ring.PinnedContentVersion))
+	} else {
+		checks = append(checks, resource.TestCheckNoResourceAttr("crowdstrike_content_update_policy.test", category+".pinned_content_version"))
 	}
 
 	return checks
@@ -307,6 +325,77 @@ func TestAccContentUpdatePolicyResource_HostGroups(t *testing.T) {
 				},
 				RapidResponse: ringConfig{
 					RingAssignment: "pause",
+				},
+			},
+		},
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
+		Steps: func() []resource.TestStep {
+			var steps []resource.TestStep
+			for _, tc := range testCases {
+				steps = append(steps, resource.TestStep{
+					Config: tc.config.String(),
+					Check:  tc.config.TestChecks(),
+				})
+			}
+			return steps
+		}(),
+	})
+}
+
+func TestAccContentUpdatePolicyResource_PinnedContentVersion(t *testing.T) {
+
+	testCases := []struct {
+		name   string
+		config policyConfig
+	}{
+		{
+			name: "pinned_content_version_basic",
+			config: policyConfig{
+				Name:        "test-policy-pinned-version",
+				Description: "Test content update policy with pinned content version",
+				Enabled:     utils.Addr(true),
+				SensorOperations: ringConfig{
+					RingAssignment:       "ga",
+					PinnedContentVersion: utils.Addr("1234567890abcdef"),
+				},
+				SystemCritical: ringConfig{
+					RingAssignment: "ga",
+					DelayHours:     utils.Addr(24),
+				},
+				VulnerabilityManagement: ringConfig{
+					RingAssignment:       "ea",
+					PinnedContentVersion: utils.Addr("fedcba0987654321"),
+				},
+				RapidResponse: ringConfig{
+					RingAssignment: "pause",
+				},
+			},
+		},
+		{
+			name: "pinned_content_version_all_categories",
+			config: policyConfig{
+				Name:        "test-policy-all-pinned",
+				Description: "Test content update policy with all categories pinned",
+				Enabled:     utils.Addr(true),
+				SensorOperations: ringConfig{
+					RingAssignment:       "ga",
+					PinnedContentVersion: utils.Addr("sensor123456789"),
+				},
+				SystemCritical: ringConfig{
+					RingAssignment:       "ea",
+					PinnedContentVersion: utils.Addr("critical123456"),
+				},
+				VulnerabilityManagement: ringConfig{
+					RingAssignment:       "ga",
+					PinnedContentVersion: utils.Addr("vuln123456789"),
+				},
+				RapidResponse: ringConfig{
+					RingAssignment:       "pause",
+					PinnedContentVersion: utils.Addr("rapid123456789"),
 				},
 			},
 		},
@@ -581,6 +670,30 @@ func TestAccContentUpdatePolicyResource_Validation(t *testing.T) {
 				},
 			},
 			expectError: regexp.MustCompile(`(?s).*Attribute system_critical.ring_assignment value must be one of.*"pause"`),
+		},
+		{
+			name: "invalid_pinned_version_with_delay_hours",
+			config: policyConfig{
+				Name:        "test-policy-invalid-pinned",
+				Description: "Test content update policy with invalid pinned version and delay hours",
+				Enabled:     utils.Addr(true),
+				SensorOperations: ringConfig{
+					RingAssignment:       "ga",
+					DelayHours:           utils.Addr(24),
+					PinnedContentVersion: utils.Addr("1234567890abcdef"),
+				},
+				SystemCritical: ringConfig{
+					RingAssignment: "ga",
+					DelayHours:     utils.Addr(0),
+				},
+				VulnerabilityManagement: ringConfig{
+					RingAssignment: "ea",
+				},
+				RapidResponse: ringConfig{
+					RingAssignment: "pause",
+				},
+			},
+			expectError: regexp.MustCompile("pinned_content_version cannot be used together with delay_hours"),
 		},
 		{
 			name: "invalid_delay_hours_too_high",
