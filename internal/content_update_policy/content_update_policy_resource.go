@@ -3,7 +3,6 @@ package contentupdatepolicy
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/crowdstrike/gofalcon/falcon/client"
@@ -182,44 +181,17 @@ func (d *contentPolicyResourceModel) wrap(
 		d.HostGroups = hostGroupSet
 	}
 
-	if policy.Settings != nil && policy.Settings.RingAssignmentSettings != nil {
-		for _, setting := range policy.Settings.RingAssignmentSettings {
-			ringAssignment := ringAssignmentModel{
-				RingAssignment: types.StringValue(*setting.RingAssignment),
-			}
-
-			if *setting.RingAssignment == "ga" {
-				delayHours := int64(0)
-				if setting.DelayHours != nil {
-					if delayStr := *setting.DelayHours; delayStr != "" {
-						if delay, err := strconv.ParseInt(delayStr, 10, 64); err == nil {
-							delayHours = delay
-						}
-					}
-				}
-				ringAssignment.DelayHours = types.Int64Value(delayHours)
-			} else {
-				ringAssignment.DelayHours = types.Int64Null()
-			}
-
-			objValue, diag := types.ObjectValueFrom(ctx, ringAssignment.AttributeTypes(), ringAssignment)
-			diags.Append(diag...)
-			if diags.HasError() {
-				return diags
-			}
-
-			switch *setting.ID {
-			case "sensor_operations":
-				d.SensorOperations = objValue
-			case "system_critical":
-				d.SystemCritical = objValue
-			case "vulnerability_management":
-				d.VulnerabilityManagement = objValue
-			case "rapid_response_al_bl_listing":
-				d.RapidResponse = objValue
-			}
-		}
+	// Use shared function to populate ring assignments
+	sensorOps, systemCrit, vulnMgmt, rapidResp, ringDiags := populateRingAssignments(ctx, policy)
+	diags.Append(ringDiags...)
+	if diags.HasError() {
+		return diags
 	}
+
+	d.SensorOperations = sensorOps
+	d.SystemCritical = systemCrit
+	d.VulnerabilityManagement = vulnMgmt
+	d.RapidResponse = rapidResp
 
 	return diags
 }
