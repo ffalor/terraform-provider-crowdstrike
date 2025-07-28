@@ -3,7 +3,6 @@ package contentupdatepolicy
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -13,20 +12,15 @@ import (
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/scopes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -50,61 +44,28 @@ type defaultContentUpdatePolicyResource struct {
 // defaultContentUpdatePolicyResourceModel is the resource model.
 type defaultContentUpdatePolicyResourceModel struct {
 	ID                      types.String `tfsdk:"id"`
-	PlatformName            types.String `tfsdk:"platform_name"`
-	Enabled                 types.Bool   `tfsdk:"enabled"`
 	SensorOperations        types.Object `tfsdk:"sensor_operations"`
 	SystemCritical          types.Object `tfsdk:"system_critical"`
 	VulnerabilityManagement types.Object `tfsdk:"vulnerability_management"`
 	RapidResponse           types.Object `tfsdk:"rapid_response"`
 	LastUpdated             types.String `tfsdk:"last_updated"`
 
-	sensorOperations        *defaultRingAssignmentModel `tfsdk:"-"`
-	systemCritical          *defaultRingAssignmentModel `tfsdk:"-"`
-	vulnerabilityManagement *defaultRingAssignmentModel `tfsdk:"-"`
-	rapidResponse           *defaultRingAssignmentModel `tfsdk:"-"`
+	settings *contentUpdatePolicySettings `tfsdk:"-"`
 }
 
-// defaultRingAssignmentModel represents a content category ring assignment for default policies.
-type defaultRingAssignmentModel struct {
-	RingAssignment types.String `tfsdk:"ring_assignment"`
-	DelayHours     types.Int64  `tfsdk:"delay_hours"`
-}
 
-// AttributeTypes returns the attribute types for the ring assignment model.
-func (r defaultRingAssignmentModel) AttributeTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"ring_assignment": types.StringType,
-		"delay_hours":     types.Int64Type,
-	}
-}
 
 // extract extracts the Go values from their terraform wrapped values.
 func (d *defaultContentUpdatePolicyResourceModel) extract(ctx context.Context) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	if !d.SensorOperations.IsNull() {
-		var sensorOps defaultRingAssignmentModel
-		diags.Append(d.SensorOperations.As(ctx, &sensorOps, basetypes.ObjectAsOptions{})...)
-		d.sensorOperations = &sensorOps
-	}
-
-	if !d.SystemCritical.IsNull() {
-		var systemCrit defaultRingAssignmentModel
-		diags.Append(d.SystemCritical.As(ctx, &systemCrit, basetypes.ObjectAsOptions{})...)
-		d.systemCritical = &systemCrit
-	}
-
-	if !d.VulnerabilityManagement.IsNull() {
-		var vulnMgmt defaultRingAssignmentModel
-		diags.Append(d.VulnerabilityManagement.As(ctx, &vulnMgmt, basetypes.ObjectAsOptions{})...)
-		d.vulnerabilityManagement = &vulnMgmt
-	}
-
-	if !d.RapidResponse.IsNull() {
-		var rapidResp defaultRingAssignmentModel
-		diags.Append(d.RapidResponse.As(ctx, &rapidResp, basetypes.ObjectAsOptions{})...)
-		d.rapidResponse = &rapidResp
-	}
+	d.settings, diags = extractRingAssignments(
+		ctx,
+		d.SensorOperations,
+		d.SystemCritical,
+		d.VulnerabilityManagement,
+		d.RapidResponse,
+	)
 
 	return diags
 }
@@ -117,62 +78,8 @@ func (d *defaultContentUpdatePolicyResourceModel) wrap(
 	var diags diag.Diagnostics
 
 	d.ID = types.StringValue(*policy.ID)
-	d.Enabled = types.BoolValue(*policy.Enabled)
 
-	if !strings.EqualFold(d.PlatformName.ValueString(), *policy.PlatformName) {
-		diags.AddError(
-			"Mismatch platform_name",
-			fmt.Sprintf(
-				"The api returned the following platform_name: %s for default content update policy: %s, the terraform config has a platform_name value of %s. This should not be possible, if you imported this resource ensure you updated the platform_name to the correct value in your terraform config.\n\nIf you believe there is a bug in the provider or need help please let us know by opening a github issue here: https://github.com/CrowdStrike/terraform-provider-crowdstrike/issues",
-				*policy.PlatformName,
-				d.ID,
-				d.PlatformName.ValueString(),
-			),
-		)
-	}
-
-	if d.PlatformName.IsNull() {
-		d.PlatformName = types.StringValue(*policy.PlatformName)
-	}
-
-	if policy.Settings != nil && policy.Settings.RingAssignmentSettings != nil {
-		for _, setting := range policy.Settings.RingAssignmentSettings {
-			ringAssignment := defaultRingAssignmentModel{
-				RingAssignment: types.StringValue(*setting.RingAssignment),
-			}
-
-			if *setting.RingAssignment == "ga" {
-				delayHours := int64(0)
-				if setting.DelayHours != nil {
-					if delayStr := *setting.DelayHours; delayStr != "" {
-						if delay, err := strconv.ParseInt(delayStr, 10, 64); err == nil {
-							delayHours = delay
-						}
-					}
-				}
-				ringAssignment.DelayHours = types.Int64Value(delayHours)
-			} else {
-				ringAssignment.DelayHours = types.Int64Null()
-			}
-
-			objValue, diag := types.ObjectValueFrom(ctx, ringAssignment.AttributeTypes(), ringAssignment)
-			diags.Append(diag...)
-			if diags.HasError() {
-				return diags
-			}
-
-			switch *setting.ID {
-			case "sensor_operations":
-				d.SensorOperations = objValue
-			case "system_critical":
-				d.SystemCritical = objValue
-			case "vulnerability_management":
-				d.VulnerabilityManagement = objValue
-			case "rapid_response_al_bl_listing":
-				d.RapidResponse = objValue
-			}
-		}
-	}
+	d.SensorOperations, d.SystemCritical, d.VulnerabilityManagement, d.RapidResponse, diags = populateRingAssignments(ctx, policy)
 
 	return diags
 }
@@ -243,19 +150,6 @@ func (r *defaultContentUpdatePolicyResource) Schema(
 			"last_updated": schema.StringAttribute{
 				Computed:    true,
 				Description: "Timestamp of the last Terraform update of the resource.",
-			},
-			"platform_name": schema.StringAttribute{
-				Required:    true,
-				Description: "Chooses which default content update policy to manage. (Windows, Mac, Linux)",
-				Validators: []validator.String{
-					stringvalidator.OneOfCaseInsensitive("Windows", "Linux", "Mac"),
-				},
-			},
-			"enabled": schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Enable the default content update policy.",
-				Default:     booldefault.StaticBool(true),
 			},
 			"sensor_operations": schema.SingleNestedAttribute{
 				Required:    true,
@@ -342,6 +236,7 @@ func (r *defaultContentUpdatePolicyResource) Schema(
 }
 
 // Create imports the resource into state and configures it. The default resource policy can't be created or deleted.
+// Users must import the default policy by ID first before managing it.
 func (r *defaultContentUpdatePolicyResource) Create(
 	ctx context.Context,
 	req resource.CreateRequest,
@@ -354,19 +249,23 @@ func (r *defaultContentUpdatePolicyResource) Create(
 		return
 	}
 
-	policy, diags := r.getDefaultPolicy(ctx, plan.PlatformName.ValueString())
+	// For default policies, the ID should be set during import
+	if plan.ID.IsNull() {
+		resp.Diagnostics.AddError(
+			"Default content update policy must be imported",
+			"Default content update policies cannot be created, they must be imported using their policy ID. Use 'terraform import crowdstrike_default_content_update_policy.<name> <policy-id>' to import an existing default policy.",
+		)
+		return
+	}
+
+	// Read the current policy to ensure it exists
+	policy, diags := getContentUpdatePolicy(ctx, r.client, plan.ID.ValueString())
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	plan.ID = types.StringValue(*policy.ID)
-	resp.Diagnostics.Append(
-		resp.State.SetAttribute(ctx, path.Root("id"), plan.ID)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
+	// Update the policy with the planned configuration
 	policy, diags = r.updateDefaultPolicy(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -476,46 +375,46 @@ func (r *defaultContentUpdatePolicyResource) ValidateConfig(
 		return
 	}
 
-	if config.sensorOperations != nil {
-		if config.sensorOperations.RingAssignment.ValueString() != "ga" && !config.sensorOperations.DelayHours.IsNull() {
+	if config.settings.sensorOperations != nil {
+		if config.settings.sensorOperations.RingAssignment.ValueString() != "ga" && !config.settings.sensorOperations.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("sensor_operations").AtName("delay_hours"),
 				"Invalid delay_hours configuration",
 				fmt.Sprintf("delay_hours can only be set when ring_assignment is 'ga'. sensor_operations has ring_assignment '%s' but delay_hours is set.",
-					config.sensorOperations.RingAssignment.ValueString()),
+					config.settings.sensorOperations.RingAssignment.ValueString()),
 			)
 		}
 	}
 
-	if config.systemCritical != nil {
-		if config.systemCritical.RingAssignment.ValueString() != "ga" && !config.systemCritical.DelayHours.IsNull() {
+	if config.settings.systemCritical != nil {
+		if config.settings.systemCritical.RingAssignment.ValueString() != "ga" && !config.settings.systemCritical.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("system_critical").AtName("delay_hours"),
 				"Invalid delay_hours configuration",
 				fmt.Sprintf("delay_hours can only be set when ring_assignment is 'ga'. system_critical has ring_assignment '%s' but delay_hours is set.",
-					config.systemCritical.RingAssignment.ValueString()),
+					config.settings.systemCritical.RingAssignment.ValueString()),
 			)
 		}
 	}
 
-	if config.vulnerabilityManagement != nil {
-		if config.vulnerabilityManagement.RingAssignment.ValueString() != "ga" && !config.vulnerabilityManagement.DelayHours.IsNull() {
+	if config.settings.vulnerabilityManagement != nil {
+		if config.settings.vulnerabilityManagement.RingAssignment.ValueString() != "ga" && !config.settings.vulnerabilityManagement.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("vulnerability_management").AtName("delay_hours"),
 				"Invalid delay_hours configuration",
 				fmt.Sprintf("delay_hours can only be set when ring_assignment is 'ga'. vulnerability_management has ring_assignment '%s' but delay_hours is set.",
-					config.vulnerabilityManagement.RingAssignment.ValueString()),
+					config.settings.vulnerabilityManagement.RingAssignment.ValueString()),
 			)
 		}
 	}
 
-	if config.rapidResponse != nil {
-		if config.rapidResponse.RingAssignment.ValueString() != "ga" && !config.rapidResponse.DelayHours.IsNull() {
+	if config.settings.rapidResponse != nil {
+		if config.settings.rapidResponse.RingAssignment.ValueString() != "ga" && !config.settings.rapidResponse.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("rapid_response").AtName("delay_hours"),
 				"Invalid delay_hours configuration",
 				fmt.Sprintf("delay_hours can only be set when ring_assignment is 'ga'. rapid_response has ring_assignment '%s' but delay_hours is set.",
-					config.rapidResponse.RingAssignment.ValueString()),
+					config.settings.rapidResponse.RingAssignment.ValueString()),
 			)
 		}
 	}
@@ -527,67 +426,7 @@ func (r *defaultContentUpdatePolicyResource) updateDefaultPolicy(
 ) (*models.ContentUpdatePolicyV1, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
-	ringAssignmentSettings := make([]*models.ContentUpdateRingAssignmentSettingsReqV1, 0, 4)
-
-	if config.sensorOperations != nil {
-		delayHours := int64(0)
-		if !config.sensorOperations.DelayHours.IsNull() {
-			delayHours = config.sensorOperations.DelayHours.ValueInt64()
-		}
-		delayHoursStr := fmt.Sprintf("%d", delayHours)
-		categoryID := "sensor_operations"
-		setting := &models.ContentUpdateRingAssignmentSettingsReqV1{
-			ID:             &categoryID,
-			RingAssignment: config.sensorOperations.RingAssignment.ValueStringPointer(),
-			DelayHours:     &delayHoursStr,
-		}
-		ringAssignmentSettings = append(ringAssignmentSettings, setting)
-	}
-
-	if config.systemCritical != nil {
-		delayHours := int64(0)
-		if !config.systemCritical.DelayHours.IsNull() {
-			delayHours = config.systemCritical.DelayHours.ValueInt64()
-		}
-		delayHoursStr := fmt.Sprintf("%d", delayHours)
-		categoryID := "system_critical"
-		setting := &models.ContentUpdateRingAssignmentSettingsReqV1{
-			ID:             &categoryID,
-			RingAssignment: config.systemCritical.RingAssignment.ValueStringPointer(),
-			DelayHours:     &delayHoursStr,
-		}
-		ringAssignmentSettings = append(ringAssignmentSettings, setting)
-	}
-
-	if config.vulnerabilityManagement != nil {
-		delayHours := int64(0)
-		if !config.vulnerabilityManagement.DelayHours.IsNull() {
-			delayHours = config.vulnerabilityManagement.DelayHours.ValueInt64()
-		}
-		delayHoursStr := fmt.Sprintf("%d", delayHours)
-		categoryID := "vulnerability_management"
-		setting := &models.ContentUpdateRingAssignmentSettingsReqV1{
-			ID:             &categoryID,
-			RingAssignment: config.vulnerabilityManagement.RingAssignment.ValueStringPointer(),
-			DelayHours:     &delayHoursStr,
-		}
-		ringAssignmentSettings = append(ringAssignmentSettings, setting)
-	}
-
-	if config.rapidResponse != nil {
-		delayHours := int64(0)
-		if !config.rapidResponse.DelayHours.IsNull() {
-			delayHours = config.rapidResponse.DelayHours.ValueInt64()
-		}
-		delayHoursStr := fmt.Sprintf("%d", delayHours)
-		categoryID := "rapid_response_al_bl_listing"
-		setting := &models.ContentUpdateRingAssignmentSettingsReqV1{
-			ID:             &categoryID,
-			RingAssignment: config.rapidResponse.RingAssignment.ValueStringPointer(),
-			DelayHours:     &delayHoursStr,
-		}
-		ringAssignmentSettings = append(ringAssignmentSettings, setting)
-	}
+	ringAssignmentSettings := buildRingAssignmentSettings(config.settings)
 
 	policyParams := content_update_policies.UpdateContentUpdatePoliciesParams{
 		Context: ctx,
@@ -615,99 +454,7 @@ func (r *defaultContentUpdatePolicyResource) updateDefaultPolicy(
 
 	policy := res.Payload.Resources[0]
 
-	// Update enabled state if needed
-	if config.Enabled.ValueBool() != *policy.Enabled {
-		err := r.updatePolicyEnabledState(ctx, config.ID.ValueString(), config.Enabled.ValueBool())
-		if err != nil {
-			diags.AddError(
-				"Error changing default content update policy enabled state",
-				"Could not change default content update policy enabled state, unexpected error: "+err.Error(),
-			)
-			return nil, diags
-		}
-
-		// Re-fetch the policy after enabling/disabling
-		updatedPolicy, fetchDiags := getContentUpdatePolicy(ctx, r.client, config.ID.ValueString())
-		diags.Append(fetchDiags...)
-		if diags.HasError() {
-			return nil, diags
-		}
-		policy = updatedPolicy
-	}
-
 	return policy, diags
 }
 
-func (r *defaultContentUpdatePolicyResource) getDefaultPolicy(
-	ctx context.Context,
-	platformName string,
-) (*models.ContentUpdatePolicyV1, diag.Diagnostics) {
-	var diags diag.Diagnostics
 
-	caser := cases.Title(language.English)
-	platformName = caser.String(platformName)
-
-	filter := fmt.Sprintf(
-		`platform_name:'%s'+name.raw:'platform_default'+description:'platform'+description:'default'+description:'policy'`,
-		platformName,
-	)
-	sort := "precedence.desc"
-
-	res, err := r.client.ContentUpdatePolicies.QueryCombinedContentUpdatePolicies(
-		&content_update_policies.QueryCombinedContentUpdatePoliciesParams{
-			Context: ctx,
-			Filter:  &filter,
-			Sort:    &sort,
-		},
-	)
-
-	if err != nil {
-		diags.AddError(
-			"Failed to get default content update policy",
-			fmt.Sprintf("Failed to get default content update policy: %s", err),
-		)
-
-		return nil, diags
-	}
-
-	if res == nil || res.Payload == nil || len(res.Payload.Resources) == 0 {
-		diags.AddError(
-			"Unable to find default content update policy",
-			fmt.Sprintf(
-				"No policy matched filter: %s, a default policy should exist. Please report this issue to the provider developers.",
-				filter,
-			),
-		)
-
-		return nil, diags
-	}
-
-	// we sort by descending precedence, default policy is always first
-	defaultPolicy := res.Payload.Resources[0]
-
-	return defaultPolicy, diags
-}
-
-// updatePolicyEnabledState enables or disables a content update policy.
-func (r *defaultContentUpdatePolicyResource) updatePolicyEnabledState(
-	ctx context.Context,
-	policyID string,
-	enabled bool,
-) error {
-	actionName := "disable"
-	if enabled {
-		actionName = "enable"
-	}
-
-	_, err := r.client.ContentUpdatePolicies.PerformContentUpdatePoliciesAction(
-		&content_update_policies.PerformContentUpdatePoliciesActionParams{
-			Context:    ctx,
-			ActionName: actionName,
-			Body: &models.MsaEntityActionRequestV2{
-				Ids: []string{policyID},
-			},
-		},
-	)
-
-	return err
-}
