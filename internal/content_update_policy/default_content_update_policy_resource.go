@@ -21,6 +21,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -44,6 +46,7 @@ type defaultContentUpdatePolicyResource struct {
 // defaultContentUpdatePolicyResourceModel is the resource model.
 type defaultContentUpdatePolicyResourceModel struct {
 	ID                      types.String `tfsdk:"id"`
+	PlatformName            types.String `tfsdk:"platform_name"`
 	SensorOperations        types.Object `tfsdk:"sensor_operations"`
 	SystemCritical          types.Object `tfsdk:"system_critical"`
 	VulnerabilityManagement types.Object `tfsdk:"vulnerability_management"`
@@ -78,6 +81,22 @@ func (d *defaultContentUpdatePolicyResourceModel) wrap(
 	var diags diag.Diagnostics
 
 	d.ID = types.StringValue(*policy.ID)
+
+	if d.PlatformName.IsNull() {
+		d.PlatformName = types.StringValue(*policy.PlatformName)
+	}
+
+	if !strings.EqualFold(d.PlatformName.ValueString(), *policy.PlatformName) {
+		diags.AddError(
+			"Mismatch platform_name",
+			fmt.Sprintf(
+				"The api returned the following platform_name: %s for default content update policy: %s, the terraform config has a platform_name value of %s. This should not be possible, if you imported this resource ensure you updated the platform_name to the correct value in your terraform config.\n\nIf you believe there is a bug in the provider or need help please let us know by opening a github issue here: https://github.com/CrowdStrike/terraform-provider-crowdstrike/issues",
+				*policy.PlatformName,
+				d.ID,
+				d.PlatformName.ValueString(),
+			),
+		)
+	}
 
 	d.SensorOperations, d.SystemCritical, d.VulnerabilityManagement, d.RapidResponse, diags = populateRingAssignments(ctx, policy)
 
@@ -150,6 +169,13 @@ func (r *defaultContentUpdatePolicyResource) Schema(
 			"last_updated": schema.StringAttribute{
 				Computed:    true,
 				Description: "Timestamp of the last Terraform update of the resource.",
+			},
+			"platform_name": schema.StringAttribute{
+				Required:    true,
+				Description: "Chooses which default content update policy to manage. (Windows, Mac, Linux)",
+				Validators: []validator.String{
+					stringvalidator.OneOfCaseInsensitive("Windows", "Linux", "Mac"),
+				},
 			},
 			"sensor_operations": schema.SingleNestedAttribute{
 				Required:    true,
@@ -249,18 +275,15 @@ func (r *defaultContentUpdatePolicyResource) Create(
 		return
 	}
 
-	// For default policies, the ID should be set during import
-	if plan.ID.IsNull() {
-		resp.Diagnostics.AddError(
-			"Default content update policy must be imported",
-			"Default content update policies cannot be created, they must be imported using their policy ID. Use 'terraform import crowdstrike_default_content_update_policy.<name> <policy-id>' to import an existing default policy.",
-		)
+	policy, diags := r.getDefaultPolicy(ctx, plan.PlatformName.ValueString())
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Read the current policy to ensure it exists
-	policy, diags := getContentUpdatePolicy(ctx, r.client, plan.ID.ValueString())
-	resp.Diagnostics.Append(diags...)
+	plan.ID = types.StringValue(*policy.ID)
+	resp.Diagnostics.Append(
+		resp.State.SetAttribute(ctx, path.Root("id"), plan.ID)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -455,6 +478,56 @@ func (r *defaultContentUpdatePolicyResource) updateDefaultPolicy(
 	policy := res.Payload.Resources[0]
 
 	return policy, diags
+}
+
+func (r *defaultContentUpdatePolicyResource) getDefaultPolicy(
+	ctx context.Context,
+	platformName string,
+) (*models.ContentUpdatePolicyV1, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	caser := cases.Title(language.English)
+	platformName = caser.String(platformName)
+
+	filter := fmt.Sprintf(
+		`platform_name:'%s'+name.raw:'platform_default'+description:'platform'+description:'default'+description:'policy'`,
+		platformName,
+	)
+	sort := "precedence.desc"
+
+	res, err := r.client.ContentUpdatePolicies.QueryCombinedContentUpdatePolicies(
+		&content_update_policies.QueryCombinedContentUpdatePoliciesParams{
+			Context: ctx,
+			Filter:  &filter,
+			Sort:    &sort,
+		},
+	)
+
+	if err != nil {
+		diags.AddError(
+			"Failed to get default content update policy",
+			fmt.Sprintf("Failed to get default content update policy: %s", err),
+		)
+
+		return nil, diags
+	}
+
+	if res == nil || res.Payload == nil || len(res.Payload.Resources) == 0 {
+		diags.AddError(
+			"Unable to find default content update policy",
+			fmt.Sprintf(
+				"No policy matched filter: %s, a default policy should exist. Please report this issue to the provider developers.",
+				filter,
+			),
+		)
+
+		return nil, diags
+	}
+
+	// we sort by descending precedence, default policy is always first
+	defaultPolicy := res.Payload.Resources[0]
+
+	return defaultPolicy, diags
 }
 
 
