@@ -53,8 +53,6 @@ type defaultContentUpdatePolicyResourceModel struct {
 	settings *contentUpdatePolicySettings `tfsdk:"-"`
 }
 
-
-
 // extract extracts the Go values from their terraform wrapped values.
 func (d *defaultContentUpdatePolicyResourceModel) extract(ctx context.Context) diag.Diagnostics {
 	var diags diag.Diagnostics
@@ -79,7 +77,10 @@ func (d *defaultContentUpdatePolicyResourceModel) wrap(
 
 	d.ID = types.StringValue(*policy.ID)
 
-	d.SensorOperations, d.SystemCritical, d.VulnerabilityManagement, d.RapidResponse, diags = populateRingAssignments(ctx, policy)
+	d.SensorOperations, d.SystemCritical, d.VulnerabilityManagement, d.RapidResponse, diags = populateRingAssignments(
+		ctx,
+		policy,
+	)
 
 	return diags
 }
@@ -236,14 +237,13 @@ func (r *defaultContentUpdatePolicyResource) Schema(
 }
 
 // Create imports the resource into state and configures it. The default resource policy can't be created or deleted.
-// Users must import the default policy by ID first before managing it.
 func (r *defaultContentUpdatePolicyResource) Create(
 	ctx context.Context,
 	req resource.CreateRequest,
 	resp *resource.CreateResponse,
 ) {
 	tflog.Debug(ctx, "Starting default content update policy create operation")
-	
+
 	var plan defaultContentUpdatePolicyResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(plan.extract(ctx)...)
@@ -259,10 +259,10 @@ func (r *defaultContentUpdatePolicyResource) Create(
 	}
 
 	plan.ID = types.StringValue(*policy.ID)
-	tflog.Debug(ctx, "Found default content update policy", map[string]interface{}{
+	tflog.Debug(ctx, "Found default content update policy", map[string]any{
 		"policy_id": *policy.ID,
 	})
-	
+
 	resp.Diagnostics.Append(
 		resp.State.SetAttribute(ctx, path.Root("id"), plan.ID)...)
 	if resp.Diagnostics.HasError() {
@@ -283,7 +283,7 @@ func (r *defaultContentUpdatePolicyResource) Create(
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	
+
 	tflog.Debug(ctx, "Default content update policy create operation completed successfully")
 }
 
@@ -299,7 +299,7 @@ func (r *defaultContentUpdatePolicyResource) Read(
 		return
 	}
 
-	tflog.Debug(ctx, "Reading default content update policy", map[string]interface{}{
+	tflog.Debug(ctx, "Reading default content update policy", map[string]any{
 		"policy_id": state.ID.ValueString(),
 	})
 
@@ -309,7 +309,10 @@ func (r *defaultContentUpdatePolicyResource) Read(
 			if strings.Contains(diag.Summary(), "not found") {
 				tflog.Warn(
 					ctx,
-					fmt.Sprintf("default content update policy %s not found, removing from state", state.ID),
+					fmt.Sprintf(
+						"default content update policy %s not found, removing from state",
+						state.ID,
+					),
 				)
 				resp.State.RemoveResource(ctx)
 				return
@@ -319,7 +322,7 @@ func (r *defaultContentUpdatePolicyResource) Read(
 		return
 	}
 
-	tflog.Debug(ctx, "Successfully retrieved default content update policy", map[string]interface{}{
+	tflog.Debug(ctx, "Successfully retrieved default content update policy", map[string]any{
 		"policy_id": state.ID.ValueString(),
 	})
 
@@ -343,9 +346,13 @@ func (r *defaultContentUpdatePolicyResource) Update(
 		return
 	}
 
-	tflog.Debug(ctx, "Starting default content update policy update operation", map[string]interface{}{
-		"policy_id": plan.ID.ValueString(),
-	})
+	tflog.Debug(
+		ctx,
+		"Starting default content update policy update operation",
+		map[string]any{
+			"policy_id": plan.ID.ValueString(),
+		},
+	)
 
 	policy, diags := r.updateDefaultPolicy(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -360,7 +367,7 @@ func (r *defaultContentUpdatePolicyResource) Update(
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	
+
 	tflog.Debug(ctx, "Default content update policy update operation completed successfully")
 }
 
@@ -370,7 +377,10 @@ func (r *defaultContentUpdatePolicyResource) Delete(
 	req resource.DeleteRequest,
 	resp *resource.DeleteResponse,
 ) {
-	tflog.Debug(ctx, "Default content update policy delete operation - resource will be removed from state only (cannot delete default policy)")
+	tflog.Debug(
+		ctx,
+		"Default content update policy delete operation - resource will be removed from state only (cannot delete default policy)",
+	)
 	// We can not delete the default content update policy, so we will just remove it from state.
 }
 
@@ -398,45 +408,57 @@ func (r *defaultContentUpdatePolicyResource) ValidateConfig(
 	}
 
 	if config.settings.sensorOperations != nil {
-		if config.settings.sensorOperations.RingAssignment.ValueString() != "ga" && !config.settings.sensorOperations.DelayHours.IsNull() {
+		if config.settings.sensorOperations.RingAssignment.ValueString() != "ga" &&
+			!config.settings.sensorOperations.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("sensor_operations").AtName("delay_hours"),
 				"Invalid delay_hours configuration",
-				fmt.Sprintf("delay_hours can only be set when ring_assignment is 'ga'. sensor_operations has ring_assignment '%s' but delay_hours is set.",
-					config.settings.sensorOperations.RingAssignment.ValueString()),
+				fmt.Sprintf(
+					"delay_hours can only be set when ring_assignment is 'ga'. sensor_operations has ring_assignment '%s' but delay_hours is set.",
+					config.settings.sensorOperations.RingAssignment.ValueString(),
+				),
 			)
 		}
 	}
 
 	if config.settings.systemCritical != nil {
-		if config.settings.systemCritical.RingAssignment.ValueString() != "ga" && !config.settings.systemCritical.DelayHours.IsNull() {
+		if config.settings.systemCritical.RingAssignment.ValueString() != "ga" &&
+			!config.settings.systemCritical.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("system_critical").AtName("delay_hours"),
 				"Invalid delay_hours configuration",
-				fmt.Sprintf("delay_hours can only be set when ring_assignment is 'ga'. system_critical has ring_assignment '%s' but delay_hours is set.",
-					config.settings.systemCritical.RingAssignment.ValueString()),
+				fmt.Sprintf(
+					"delay_hours can only be set when ring_assignment is 'ga'. system_critical has ring_assignment '%s' but delay_hours is set.",
+					config.settings.systemCritical.RingAssignment.ValueString(),
+				),
 			)
 		}
 	}
 
 	if config.settings.vulnerabilityManagement != nil {
-		if config.settings.vulnerabilityManagement.RingAssignment.ValueString() != "ga" && !config.settings.vulnerabilityManagement.DelayHours.IsNull() {
+		if config.settings.vulnerabilityManagement.RingAssignment.ValueString() != "ga" &&
+			!config.settings.vulnerabilityManagement.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("vulnerability_management").AtName("delay_hours"),
 				"Invalid delay_hours configuration",
-				fmt.Sprintf("delay_hours can only be set when ring_assignment is 'ga'. vulnerability_management has ring_assignment '%s' but delay_hours is set.",
-					config.settings.vulnerabilityManagement.RingAssignment.ValueString()),
+				fmt.Sprintf(
+					"delay_hours can only be set when ring_assignment is 'ga'. vulnerability_management has ring_assignment '%s' but delay_hours is set.",
+					config.settings.vulnerabilityManagement.RingAssignment.ValueString(),
+				),
 			)
 		}
 	}
 
 	if config.settings.rapidResponse != nil {
-		if config.settings.rapidResponse.RingAssignment.ValueString() != "ga" && !config.settings.rapidResponse.DelayHours.IsNull() {
+		if config.settings.rapidResponse.RingAssignment.ValueString() != "ga" &&
+			!config.settings.rapidResponse.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("rapid_response").AtName("delay_hours"),
 				"Invalid delay_hours configuration",
-				fmt.Sprintf("delay_hours can only be set when ring_assignment is 'ga'. rapid_response has ring_assignment '%s' but delay_hours is set.",
-					config.settings.rapidResponse.RingAssignment.ValueString()),
+				fmt.Sprintf(
+					"delay_hours can only be set when ring_assignment is 'ga'. rapid_response has ring_assignment '%s' but delay_hours is set.",
+					config.settings.rapidResponse.RingAssignment.ValueString(),
+				),
 			)
 		}
 	}
@@ -449,11 +471,15 @@ func (r *defaultContentUpdatePolicyResource) updateDefaultPolicy(
 	var diags diag.Diagnostics
 
 	ringAssignmentSettings := buildRingAssignmentSettings(config.settings)
-	
-	tflog.Debug(ctx, "Building ring assignment settings for default policy update", map[string]interface{}{
-		"policy_id":    config.ID.ValueString(),
-		"setting_count": len(ringAssignmentSettings),
-	})
+
+	tflog.Debug(
+		ctx,
+		"Building ring assignment settings for default policy update",
+		map[string]any{
+			"policy_id":     config.ID.ValueString(),
+			"setting_count": len(ringAssignmentSettings),
+		},
+	)
 
 	policyParams := content_update_policies.UpdateContentUpdatePoliciesParams{
 		Context: ctx,
@@ -481,8 +507,8 @@ func (r *defaultContentUpdatePolicyResource) updateDefaultPolicy(
 	}
 
 	policy := res.Payload.Resources[0]
-	
-	tflog.Debug(ctx, "Successfully updated default content update policy", map[string]interface{}{
+
+	tflog.Debug(ctx, "Successfully updated default content update policy", map[string]any{
 		"policy_id": *policy.ID,
 	})
 
@@ -494,18 +520,23 @@ func (r *defaultContentUpdatePolicyResource) getDefaultPolicy(
 ) (*models.ContentUpdatePolicyV1, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
-	// Query all content update policies and sort by precedence ascending to get the default policy
-	// The default policy always has the lowest precedence
-	sort := "precedence.asc"
+	sort := "precedence.desc"
+	filter := "name.raw:'platform_default'"
 
-	tflog.Debug(ctx, "Querying content update policies to find default policy", map[string]interface{}{
-		"sort": sort,
-	})
+	tflog.Debug(
+		ctx,
+		"Querying content update policies to find default policy",
+		map[string]any{
+			"sort":   sort,
+			"filter": filter,
+		},
+	)
 
 	res, err := r.client.ContentUpdatePolicies.QueryCombinedContentUpdatePolicies(
 		&content_update_policies.QueryCombinedContentUpdatePoliciesParams{
 			Context: ctx,
 			Sort:    &sort,
+			Filter:  &filter,
 		},
 	)
 
@@ -529,8 +560,8 @@ func (r *defaultContentUpdatePolicyResource) getDefaultPolicy(
 
 	// Sort by ascending precedence, so the default policy (lowest precedence) is first
 	defaultPolicy := res.Payload.Resources[0]
-	
-	tflog.Debug(ctx, "Found default content update policy", map[string]interface{}{
+
+	tflog.Debug(ctx, "Found default content update policy", map[string]any{
 		"policy_id":      *defaultPolicy.ID,
 		"policy_name":    *defaultPolicy.Name,
 		"total_policies": len(res.Payload.Resources),
@@ -538,5 +569,3 @@ func (r *defaultContentUpdatePolicyResource) getDefaultPolicy(
 
 	return defaultPolicy, diags
 }
-
-
