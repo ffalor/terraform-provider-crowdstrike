@@ -242,6 +242,8 @@ func (r *defaultContentUpdatePolicyResource) Create(
 	req resource.CreateRequest,
 	resp *resource.CreateResponse,
 ) {
+	tflog.Debug(ctx, "Starting default content update policy create operation")
+	
 	var plan defaultContentUpdatePolicyResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(plan.extract(ctx)...)
@@ -249,6 +251,7 @@ func (r *defaultContentUpdatePolicyResource) Create(
 		return
 	}
 
+	tflog.Debug(ctx, "Retrieving default content update policy")
 	policy, diags := r.getDefaultPolicy(ctx)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -256,6 +259,10 @@ func (r *defaultContentUpdatePolicyResource) Create(
 	}
 
 	plan.ID = types.StringValue(*policy.ID)
+	tflog.Debug(ctx, "Found default content update policy", map[string]interface{}{
+		"policy_id": *policy.ID,
+	})
+	
 	resp.Diagnostics.Append(
 		resp.State.SetAttribute(ctx, path.Root("id"), plan.ID)...)
 	if resp.Diagnostics.HasError() {
@@ -263,6 +270,7 @@ func (r *defaultContentUpdatePolicyResource) Create(
 	}
 
 	// Update the policy with the planned configuration
+	tflog.Debug(ctx, "Updating default content update policy with planned configuration")
 	policy, diags = r.updateDefaultPolicy(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -275,6 +283,8 @@ func (r *defaultContentUpdatePolicyResource) Create(
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	
+	tflog.Debug(ctx, "Default content update policy create operation completed successfully")
 }
 
 // Read refreshes the Terraform state with the latest data.
@@ -288,6 +298,10 @@ func (r *defaultContentUpdatePolicyResource) Read(
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	tflog.Debug(ctx, "Reading default content update policy", map[string]interface{}{
+		"policy_id": state.ID.ValueString(),
+	})
 
 	policy, diags := getContentUpdatePolicy(ctx, r.client, state.ID.ValueString())
 	if diags.HasError() {
@@ -304,6 +318,10 @@ func (r *defaultContentUpdatePolicyResource) Read(
 		resp.Diagnostics.Append(diags...)
 		return
 	}
+
+	tflog.Debug(ctx, "Successfully retrieved default content update policy", map[string]interface{}{
+		"policy_id": state.ID.ValueString(),
+	})
 
 	resp.Diagnostics.Append(state.wrap(ctx, *policy)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -325,6 +343,10 @@ func (r *defaultContentUpdatePolicyResource) Update(
 		return
 	}
 
+	tflog.Debug(ctx, "Starting default content update policy update operation", map[string]interface{}{
+		"policy_id": plan.ID.ValueString(),
+	})
+
 	policy, diags := r.updateDefaultPolicy(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -338,6 +360,8 @@ func (r *defaultContentUpdatePolicyResource) Update(
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	
+	tflog.Debug(ctx, "Default content update policy update operation completed successfully")
 }
 
 // Delete deletes the resource and removes the Terraform state on success.
@@ -346,6 +370,7 @@ func (r *defaultContentUpdatePolicyResource) Delete(
 	req resource.DeleteRequest,
 	resp *resource.DeleteResponse,
 ) {
+	tflog.Debug(ctx, "Default content update policy delete operation - resource will be removed from state only (cannot delete default policy)")
 	// We can not delete the default content update policy, so we will just remove it from state.
 }
 
@@ -424,6 +449,11 @@ func (r *defaultContentUpdatePolicyResource) updateDefaultPolicy(
 	var diags diag.Diagnostics
 
 	ringAssignmentSettings := buildRingAssignmentSettings(config.settings)
+	
+	tflog.Debug(ctx, "Building ring assignment settings for default policy update", map[string]interface{}{
+		"policy_id":    config.ID.ValueString(),
+		"setting_count": len(ringAssignmentSettings),
+	})
 
 	policyParams := content_update_policies.UpdateContentUpdatePoliciesParams{
 		Context: ctx,
@@ -439,6 +469,7 @@ func (r *defaultContentUpdatePolicyResource) updateDefaultPolicy(
 		},
 	}
 
+	tflog.Debug(ctx, "Calling UpdateContentUpdatePolicies API for default policy")
 	res, err := r.client.ContentUpdatePolicies.UpdateContentUpdatePolicies(&policyParams)
 
 	if err != nil {
@@ -450,6 +481,10 @@ func (r *defaultContentUpdatePolicyResource) updateDefaultPolicy(
 	}
 
 	policy := res.Payload.Resources[0]
+	
+	tflog.Debug(ctx, "Successfully updated default content update policy", map[string]interface{}{
+		"policy_id": *policy.ID,
+	})
 
 	return policy, diags
 }
@@ -462,6 +497,10 @@ func (r *defaultContentUpdatePolicyResource) getDefaultPolicy(
 	// Query all content update policies and sort by precedence ascending to get the default policy
 	// The default policy always has the lowest precedence
 	sort := "precedence.asc"
+
+	tflog.Debug(ctx, "Querying content update policies to find default policy", map[string]interface{}{
+		"sort": sort,
+	})
 
 	res, err := r.client.ContentUpdatePolicies.QueryCombinedContentUpdatePolicies(
 		&content_update_policies.QueryCombinedContentUpdatePoliciesParams{
@@ -490,6 +529,12 @@ func (r *defaultContentUpdatePolicyResource) getDefaultPolicy(
 
 	// Sort by ascending precedence, so the default policy (lowest precedence) is first
 	defaultPolicy := res.Payload.Resources[0]
+	
+	tflog.Debug(ctx, "Found default content update policy", map[string]interface{}{
+		"policy_id":      *defaultPolicy.ID,
+		"policy_name":    *defaultPolicy.Name,
+		"total_policies": len(res.Payload.Resources),
+	})
 
 	return defaultPolicy, diags
 }
