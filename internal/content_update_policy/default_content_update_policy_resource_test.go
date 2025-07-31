@@ -16,6 +16,7 @@ const defaultPolicyResourceName = "crowdstrike_default_content_update_policy.tes
 
 // defaultPolicyConfig represents a complete default policy configuration.
 type defaultPolicyConfig struct {
+	Description             string
 	SensorOperations        ringConfig
 	SystemCritical          ringConfig
 	VulnerabilityManagement ringConfig
@@ -26,6 +27,8 @@ type defaultPolicyConfig struct {
 func (config *defaultPolicyConfig) String() string {
 	return fmt.Sprintf(`
 resource "crowdstrike_default_content_update_policy" "test" {
+  description = %q
+
   sensor_operations = {
     ring_assignment = %q
 	%s
@@ -47,6 +50,7 @@ resource "crowdstrike_default_content_update_policy" "test" {
   }
 }
 `,
+		config.Description,
 		config.SensorOperations.RingAssignment, config.SensorOperations.formatDelayHours(),
 		config.SystemCritical.RingAssignment, config.SystemCritical.formatDelayHours(),
 		config.VulnerabilityManagement.RingAssignment, config.VulnerabilityManagement.formatDelayHours(),
@@ -60,6 +64,7 @@ func (config *defaultPolicyConfig) TestChecks() resource.TestCheckFunc {
 	checks = append(checks,
 		resource.TestCheckResourceAttrSet(defaultPolicyResourceName, "id"),
 		resource.TestCheckResourceAttrSet(defaultPolicyResourceName, "last_updated"),
+		resource.TestCheckResourceAttr(defaultPolicyResourceName, "description", config.Description),
 	)
 
 	checks = append(checks, config.SensorOperations.generateDefaultPolicyChecks("sensor_operations")...)
@@ -97,6 +102,7 @@ func TestAccDefaultContentUpdatePolicyResource_Basic(t *testing.T) {
 		{
 			name: "mixed_configuration_initial",
 			config: defaultPolicyConfig{
+				Description: "Default content update policy with mixed ring assignments - initial configuration",
 				SensorOperations: ringConfig{
 					RingAssignment: "ga",
 					DelayHours:     utils.Addr(0),
@@ -116,6 +122,7 @@ func TestAccDefaultContentUpdatePolicyResource_Basic(t *testing.T) {
 		{
 			name: "mixed_configuration_updated",
 			config: defaultPolicyConfig{
+				Description: "Default content update policy with mixed ring assignments - updated configuration",
 				SensorOperations: ringConfig{
 					RingAssignment: "ea",
 				},
@@ -139,7 +146,7 @@ func TestAccDefaultContentUpdatePolicyResource_Basic(t *testing.T) {
 		PreCheck:                 func() { acctest.PreCheck(t) },
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			tfversion.SkipBelow(version.Must(version.NewVersion("1.9.3"))),
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.12.0"))),
 		},
 		Steps: func() []resource.TestStep {
 			var steps []resource.TestStep
@@ -170,6 +177,7 @@ func TestAccDefaultContentUpdatePolicyResource_AllGA(t *testing.T) {
 		{
 			name: "all_ga_zero_delay",
 			config: defaultPolicyConfig{
+				Description: "Default content update policy with all GA ring assignments and zero delay",
 				SensorOperations: ringConfig{
 					RingAssignment: "ga",
 					DelayHours:     utils.Addr(0),
@@ -191,6 +199,7 @@ func TestAccDefaultContentUpdatePolicyResource_AllGA(t *testing.T) {
 		{
 			name: "all_ga_various_delays",
 			config: defaultPolicyConfig{
+				Description: "Default content update policy with all GA ring assignments and various delay hours",
 				SensorOperations: ringConfig{
 					RingAssignment: "ga",
 					DelayHours:     utils.Addr(12),
@@ -215,7 +224,7 @@ func TestAccDefaultContentUpdatePolicyResource_AllGA(t *testing.T) {
 		PreCheck:                 func() { acctest.PreCheck(t) },
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			tfversion.SkipBelow(version.Must(version.NewVersion("1.9.3"))),
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.12.0"))),
 		},
 		Steps: func() []resource.TestStep {
 			var steps []resource.TestStep
@@ -238,6 +247,7 @@ func TestAccDefaultContentUpdatePolicyResource_AllEA(t *testing.T) {
 		{
 			name: "all_ea_no_delays",
 			config: defaultPolicyConfig{
+				Description: "Default content update policy with all EA ring assignments",
 				SensorOperations: ringConfig{
 					RingAssignment: "ea",
 				},
@@ -258,7 +268,7 @@ func TestAccDefaultContentUpdatePolicyResource_AllEA(t *testing.T) {
 		PreCheck:                 func() { acctest.PreCheck(t) },
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			tfversion.SkipBelow(version.Must(version.NewVersion("1.9.3"))),
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.12.0"))),
 		},
 		Steps: func() []resource.TestStep {
 			var steps []resource.TestStep
@@ -288,6 +298,7 @@ func TestAccDefaultContentUpdatePolicyResource_DelayHoursBoundaries(t *testing.T
 		}{
 			name: fmt.Sprintf("delay_hours_%d", delay),
 			config: defaultPolicyConfig{
+				Description: fmt.Sprintf("Default content update policy testing delay hours boundary value: %d", delay),
 				SensorOperations: ringConfig{
 					RingAssignment: "ga",
 					DelayHours:     utils.Addr(delay),
@@ -312,7 +323,7 @@ func TestAccDefaultContentUpdatePolicyResource_DelayHoursBoundaries(t *testing.T
 		PreCheck:                 func() { acctest.PreCheck(t) },
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			tfversion.SkipBelow(version.Must(version.NewVersion("1.9.3"))),
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.12.0"))),
 		},
 		Steps: func() []resource.TestStep {
 			var steps []resource.TestStep
@@ -336,6 +347,7 @@ func TestAccDefaultContentUpdatePolicyResource_Validation(t *testing.T) {
 		{
 			name: "invalid_delay_with_ea_ring_sensor_operations",
 			config: defaultPolicyConfig{
+				Description: "Test policy with invalid delay hours on EA ring assignment - should fail validation",
 				SensorOperations: ringConfig{
 					RingAssignment: "ea",
 					DelayHours:     utils.Addr(24),
@@ -356,6 +368,7 @@ func TestAccDefaultContentUpdatePolicyResource_Validation(t *testing.T) {
 		{
 			name: "invalid_delay_with_pause_ring_vulnerability_management",
 			config: defaultPolicyConfig{
+				Description: "Test policy with invalid delay hours on pause ring assignment - should fail validation",
 				SensorOperations: ringConfig{
 					RingAssignment: "ga",
 					DelayHours:     utils.Addr(0),
@@ -377,6 +390,7 @@ func TestAccDefaultContentUpdatePolicyResource_Validation(t *testing.T) {
 		{
 			name: "system_critical_cannot_use_pause",
 			config: defaultPolicyConfig{
+				Description: "Test policy with pause on system critical - should fail validation",
 				SensorOperations: ringConfig{
 					RingAssignment: "ga",
 					DelayHours:     utils.Addr(0),
@@ -396,6 +410,7 @@ func TestAccDefaultContentUpdatePolicyResource_Validation(t *testing.T) {
 		{
 			name: "invalid_delay_hours_too_high",
 			config: defaultPolicyConfig{
+				Description: "Test policy with invalid delay hours value - should fail validation",
 				SensorOperations: ringConfig{
 					RingAssignment: "ga",
 					DelayHours:     utils.Addr(100),
@@ -416,6 +431,7 @@ func TestAccDefaultContentUpdatePolicyResource_Validation(t *testing.T) {
 		{
 			name: "invalid_ring_assignment",
 			config: defaultPolicyConfig{
+				Description: "Test policy with invalid ring assignment value - should fail validation",
 				SensorOperations: ringConfig{
 					RingAssignment: "invalid",
 				},
@@ -432,6 +448,27 @@ func TestAccDefaultContentUpdatePolicyResource_Validation(t *testing.T) {
 			},
 			expectError: regexp.MustCompile("Attribute sensor_operations.ring_assignment value must be one of"),
 		},
+		{
+			name: "empty_description",
+			config: defaultPolicyConfig{
+				Description: "",
+				SensorOperations: ringConfig{
+					RingAssignment: "ga",
+					DelayHours:     utils.Addr(0),
+				},
+				SystemCritical: ringConfig{
+					RingAssignment: "ga",
+					DelayHours:     utils.Addr(0),
+				},
+				VulnerabilityManagement: ringConfig{
+					RingAssignment: "ea",
+				},
+				RapidResponse: ringConfig{
+					RingAssignment: "pause",
+				},
+			},
+			expectError: regexp.MustCompile("Attribute description string length must be at least 1"),
+		},
 	}
 
 	for _, tc := range validationTests {
@@ -440,7 +477,7 @@ func TestAccDefaultContentUpdatePolicyResource_Validation(t *testing.T) {
 				PreCheck:                 func() { acctest.PreCheck(t) },
 				ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 				TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-					tfversion.SkipBelow(version.Must(version.NewVersion("1.9.3"))),
+					tfversion.SkipBelow(version.Must(version.NewVersion("1.12.0"))),
 				},
 				Steps: []resource.TestStep{
 					{
@@ -461,6 +498,7 @@ func TestAccDefaultContentUpdatePolicyResource_RingTransitions(t *testing.T) {
 		{
 			name: "all_pause_to_mixed",
 			config: defaultPolicyConfig{
+				Description: "Default content update policy transitioning from pause to mixed assignments",
 				SensorOperations: ringConfig{
 					RingAssignment: "pause",
 				},
@@ -478,6 +516,7 @@ func TestAccDefaultContentUpdatePolicyResource_RingTransitions(t *testing.T) {
 		{
 			name: "mixed_to_all_ga",
 			config: defaultPolicyConfig{
+				Description: "Default content update policy transitioning to all GA assignments with various delays",
 				SensorOperations: ringConfig{
 					RingAssignment: "ga",
 					DelayHours:     utils.Addr(1),
@@ -499,6 +538,7 @@ func TestAccDefaultContentUpdatePolicyResource_RingTransitions(t *testing.T) {
 		{
 			name: "ga_to_ea_transitions",
 			config: defaultPolicyConfig{
+				Description: "Default content update policy transitioning from GA to all EA assignments",
 				SensorOperations: ringConfig{
 					RingAssignment: "ea",
 				},
@@ -519,7 +559,7 @@ func TestAccDefaultContentUpdatePolicyResource_RingTransitions(t *testing.T) {
 		PreCheck:                 func() { acctest.PreCheck(t) },
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			tfversion.SkipBelow(version.Must(version.NewVersion("1.9.3"))),
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.12.0"))),
 		},
 		Steps: func() []resource.TestStep {
 			var steps []resource.TestStep

@@ -44,6 +44,7 @@ type defaultContentUpdatePolicyResource struct {
 // defaultContentUpdatePolicyResourceModel is the resource model.
 type defaultContentUpdatePolicyResourceModel struct {
 	ID                      types.String `tfsdk:"id"`
+	Description             types.String `tfsdk:"description"`
 	SensorOperations        types.Object `tfsdk:"sensor_operations"`
 	SystemCritical          types.Object `tfsdk:"system_critical"`
 	VulnerabilityManagement types.Object `tfsdk:"vulnerability_management"`
@@ -76,6 +77,7 @@ func (d *defaultContentUpdatePolicyResourceModel) wrap(
 	var diags diag.Diagnostics
 
 	d.ID = types.StringValue(*policy.ID)
+	d.Description = types.StringPointerValue(policy.Description)
 
 	d.SensorOperations, d.SystemCritical, d.VulnerabilityManagement, d.RapidResponse, diags = populateRingAssignments(
 		ctx,
@@ -146,6 +148,13 @@ func (r *defaultContentUpdatePolicyResource) Schema(
 				Description: "Identifier for the default content update policy.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"description": schema.StringAttribute{
+				Required:    true,
+				Description: "Description of the default content update policy.",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"last_updated": schema.StringAttribute{
@@ -486,7 +495,8 @@ func (r *defaultContentUpdatePolicyResource) updateDefaultPolicy(
 		Body: &models.ContentUpdateUpdatePoliciesReqV1{
 			Resources: []*models.ContentUpdateUpdatePolicyReqV1{
 				{
-					ID: config.ID.ValueStringPointer(),
+					ID:          config.ID.ValueStringPointer(),
+					Description: config.Description.ValueString(),
 					Settings: &models.ContentUpdateContentUpdateSettingsReqV1{
 						RingAssignmentSettings: ringAssignmentSettings,
 					},
