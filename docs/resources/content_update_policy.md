@@ -228,6 +228,7 @@ Required:
 Optional:
 
 - `delay_hours` (Number) Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.
+- `pinned_content_version` (String) Pin content category to a specific version. When set, the content category will not automatically update to newer versions.
 
 
 <a id="nestedatt--sensor_operations"></a>
@@ -240,6 +241,7 @@ Required:
 Optional:
 
 - `delay_hours` (Number) Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.
+- `pinned_content_version` (String) Pin content category to a specific version. When set, the content category will not automatically update to newer versions.
 
 
 <a id="nestedatt--system_critical"></a>
@@ -252,6 +254,7 @@ Required:
 Optional:
 
 - `delay_hours` (Number) Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.
+- `pinned_content_version` (String) Pin content category to a specific version. When set, the content category will not automatically update to newer versions.
 
 
 <a id="nestedatt--vulnerability_management"></a>
@@ -264,6 +267,7 @@ Required:
 Optional:
 
 - `delay_hours` (Number) Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.
+- `pinned_content_version` (String) Pin content category to a specific version. When set, the content category will not automatically update to newer versions.
 
 ## Import
 
