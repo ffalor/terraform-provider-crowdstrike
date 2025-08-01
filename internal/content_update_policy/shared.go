@@ -188,6 +188,13 @@ func populateRingAssignments(
 				ringAssignment.DelayHours = types.Int64Null()
 			}
 
+			// Handle pinned content version
+			if setting.PinnedContentVersion != nil && *setting.PinnedContentVersion != "" {
+				ringAssignment.PinnedContentVersion = types.StringValue(*setting.PinnedContentVersion)
+			} else {
+				ringAssignment.PinnedContentVersion = types.StringNull()
+			}
+
 			objValue, diag := types.ObjectValueFrom(ctx, ringAssignment.AttributeTypes(), ringAssignment)
 			diags.Append(diag...)
 			if diags.HasError() {
@@ -267,4 +274,111 @@ func updatePolicyEnabledState(
 	)
 
 	return err
+}
+
+// setPinnedContentVersion sets a pinned content version for a specific category.
+func setPinnedContentVersion(
+	ctx context.Context,
+	client *client.CrowdStrikeAPISpecification,
+	policyID, categoryName, version string,
+) error {
+	actionParams := []*models.MsaspecActionParameter{
+		{
+			Name:  &categoryName,
+			Value: &version,
+		},
+	}
+
+	_, err := client.ContentUpdatePolicies.PerformContentUpdatePoliciesAction(
+		&content_update_policies.PerformContentUpdatePoliciesActionParams{
+			Context:    ctx,
+			ActionName: "set-pinned-content-version",
+			Body: &models.MsaEntityActionRequestV2{
+				ActionParameters: actionParams,
+				Ids:              []string{policyID},
+			},
+		},
+	)
+
+	return err
+}
+
+// removePinnedContentVersion removes a pinned content version for a specific category.
+func removePinnedContentVersion(
+	ctx context.Context,
+	client *client.CrowdStrikeAPISpecification,
+	policyID, categoryName string,
+) error {
+	// For remove action, we only need the category name as the parameter value
+	actionParams := []*models.MsaspecActionParameter{
+		{
+			Name:  &categoryName,
+			Value: &categoryName,
+		},
+	}
+
+	_, err := client.ContentUpdatePolicies.PerformContentUpdatePoliciesAction(
+		&content_update_policies.PerformContentUpdatePoliciesActionParams{
+			Context:    ctx,
+			ActionName: "remove-pinned-content-version",
+			Body: &models.MsaEntityActionRequestV2{
+				ActionParameters: actionParams,
+				Ids:              []string{policyID},
+			},
+		},
+	)
+
+	return err
+}
+
+// managePinnedContentVersions handles setting and removing pinned content versions for a policy.
+func managePinnedContentVersions(
+	ctx context.Context,
+	client *client.CrowdStrikeAPISpecification,
+	policyID string,
+	currentSettings, plannedSettings *contentUpdatePolicySettings,
+) error {
+	categories := map[string]struct {
+		current *ringAssignmentModel
+		planned *ringAssignmentModel
+		apiName string
+	}{
+		"sensor_operations":        {currentSettings.sensorOperations, plannedSettings.sensorOperations, "sensor_operations"},
+		"system_critical":          {currentSettings.systemCritical, plannedSettings.systemCritical, "system_critical"},
+		"vulnerability_management": {currentSettings.vulnerabilityManagement, plannedSettings.vulnerabilityManagement, "vulnerability_management"},
+		"rapid_response":           {currentSettings.rapidResponse, plannedSettings.rapidResponse, "rapid_response_al_bl_listing"},
+	}
+
+	for _, category := range categories {
+		if category.planned == nil {
+			continue
+		}
+
+		var currentVersion, plannedVersion string
+
+		if category.current != nil && !category.current.PinnedContentVersion.IsNull() {
+			currentVersion = category.current.PinnedContentVersion.ValueString()
+		}
+
+		if !category.planned.PinnedContentVersion.IsNull() {
+			plannedVersion = category.planned.PinnedContentVersion.ValueString()
+		}
+
+		// If versions are different, update accordingly
+		if currentVersion != plannedVersion {
+			if plannedVersion != "" {
+				// Set new pinned version
+				if err := setPinnedContentVersion(ctx, client, policyID, category.apiName, plannedVersion); err != nil {
+					return fmt.Errorf("failed to set pinned content version for %s: %w", category.apiName, err)
+				}
+			} else if currentVersion != "" {
+				// Remove pinned version
+				if err := removePinnedContentVersion(ctx, client, policyID, category.apiName); err != nil {
+					return fmt.Errorf("failed to remove pinned content version for %s: %w", category.apiName, err)
+				}
+			}
+		}
+	}
+
+	return nil
 }
