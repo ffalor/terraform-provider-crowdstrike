@@ -59,15 +59,7 @@ resource "crowdstrike_host_group" "hg_%d" {
   host_groups = [%s]`, strings.Join(hostGroupRefs, ", "))
 	}
 
-	// Include data source for content update versions when pinned versions are used
-	dataSourceBlock := ""
-	if config.needsDataSource() {
-		dataSourceBlock = `
-data "crowdstrike_content_update_versions" "available" {}
-`
-	}
-
-	return fmt.Sprintf(`%s%s
+	return fmt.Sprintf(`%s
 resource "crowdstrike_content_update_policy" "test" {
   name        = %q
   description = %q
@@ -95,7 +87,7 @@ resource "crowdstrike_content_update_policy" "test" {
   
   %s
 }
-`, dataSourceBlock, hostGroupResources, config.Name, config.Description, config.formatEnabled(),
+`, hostGroupResources, config.Name, config.Description, config.formatEnabled(),
 		config.SensorOperations.RingAssignment, config.SensorOperations.formatDelayHours(),
 		config.SystemCritical.RingAssignment, config.SystemCritical.formatDelayHours(),
 		config.VulnerabilityManagement.RingAssignment, config.VulnerabilityManagement.formatDelayHours(),
@@ -374,8 +366,9 @@ func TestAccContentUpdatePolicyResource_PinnedContentVersions(t *testing.T) {
 					PinnedContentVersion: utils.Addr("2025.07.22.1028"),
 				},
 				SystemCritical: ringConfig{
-					RingAssignment: "ga",
-					DelayHours:     utils.Addr(24),
+					RingAssignment:       "ga",
+					DelayHours:           utils.Addr(24),
+					PinnedContentVersion: utils.Addr("2025.07.22.104"),
 				},
 				VulnerabilityManagement: ringConfig{
 					RingAssignment:       "ga",
