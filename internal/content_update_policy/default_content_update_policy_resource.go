@@ -620,7 +620,19 @@ func (r *defaultContentUpdatePolicyResource) ModifyPlan(
 	req resource.ModifyPlanRequest,
 	resp *resource.ModifyPlanResponse,
 ) {
+
+	tflog.Debug(ctx, "Starting ModifyPlan method")
+
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
+		return
+	}
 	if req.State.Raw.IsNull() {
+		tflog.Debug(ctx, "State is null, skipping ModifyPlan validation")
+		return
+	}
+
+	if req.Plan.Raw.IsNull() {
+		tflog.Debug(ctx, "Plan is null, skipping ModifyPlan validation")
 		return
 	}
 
@@ -639,7 +651,7 @@ func (r *defaultContentUpdatePolicyResource) ModifyPlan(
 	}
 
 	resp.Diagnostics.Append(
-		validateContentUpdatePolicyModifyPlan(state.settings, plan.settings)...)
+		validateContentUpdatePolicyModifyPlan(ctx, state.settings, plan.settings)...)
 }
 
 func (r *defaultContentUpdatePolicyResource) updateDefaultPolicy(

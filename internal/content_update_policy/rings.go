@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // ringAssignmentModel represents a content category ring assignment.
@@ -88,29 +89,96 @@ func extractRingAssignments(
 	var diags diag.Diagnostics
 	settings := &contentUpdatePolicySettings{}
 
+	tflog.Debug(ctx, "Starting extractRingAssignments", map[string]interface{}{
+		"sensorOps":  sensorOps.String(),
+		"systemCrit": systemCrit.String(),
+		"vulnMgmt":   vulnMgmt.String(),
+		"rapidResp":  rapidResp.String(),
+	})
+
 	if !sensorOps.IsNull() {
+		tflog.Debug(ctx, "Extracting sensorOperations ring assignment")
 		var sensorOperations ringAssignmentModel
-		diags.Append(sensorOps.As(ctx, &sensorOperations, basetypes.ObjectAsOptions{})...)
+		sensorOpsDiags := sensorOps.As(ctx, &sensorOperations, basetypes.ObjectAsOptions{})
+		diags.Append(sensorOpsDiags...)
+		if sensorOpsDiags.HasError() {
+			tflog.Debug(ctx, "Failed to extract sensor operations ring assignment")
+		} else {
+			tflog.Debug(ctx, "Successfully extracted sensorOperations", map[string]interface{}{
+				"ring_assignment":        sensorOperations.RingAssignment.String(),
+				"delay_hours":            sensorOperations.DelayHours.String(),
+				"pinned_content_version": sensorOperations.PinnedContentVersion.String(),
+			})
+		}
 		settings.sensorOperations = &sensorOperations
+	} else {
+		tflog.Debug(ctx, "sensorOperations is null, skipping extraction")
 	}
 
 	if !systemCrit.IsNull() {
+		tflog.Debug(ctx, "Extracting systemCritical ring assignment")
 		var systemCritical ringAssignmentModel
-		diags.Append(systemCrit.As(ctx, &systemCritical, basetypes.ObjectAsOptions{})...)
+		systemCritDiags := systemCrit.As(ctx, &systemCritical, basetypes.ObjectAsOptions{})
+		diags.Append(systemCritDiags...)
+		if systemCritDiags.HasError() {
+			tflog.Debug(ctx, "Failed to extract system critical ring assignment")
+		} else {
+			tflog.Debug(ctx, "Successfully extracted systemCritical", map[string]interface{}{
+				"ring_assignment":        systemCritical.RingAssignment.String(),
+				"delay_hours":            systemCritical.DelayHours.String(),
+				"pinned_content_version": systemCritical.PinnedContentVersion.String(),
+			})
+		}
 		settings.systemCritical = &systemCritical
+	} else {
+		tflog.Debug(ctx, "systemCritical is null, skipping extraction")
 	}
 
 	if !vulnMgmt.IsNull() {
+		tflog.Debug(ctx, "Extracting vulnerabilityManagement ring assignment")
 		var vulnerabilityManagement ringAssignmentModel
-		diags.Append(vulnMgmt.As(ctx, &vulnerabilityManagement, basetypes.ObjectAsOptions{})...)
+		vulnMgmtDiags := vulnMgmt.As(ctx, &vulnerabilityManagement, basetypes.ObjectAsOptions{})
+		diags.Append(vulnMgmtDiags...)
+		if vulnMgmtDiags.HasError() {
+			tflog.Debug(ctx, "Failed to extract vulnerability management ring assignment")
+		} else {
+			tflog.Debug(ctx, "Successfully extracted vulnerabilityManagement", map[string]interface{}{
+				"ring_assignment":        vulnerabilityManagement.RingAssignment.String(),
+				"delay_hours":            vulnerabilityManagement.DelayHours.String(),
+				"pinned_content_version": vulnerabilityManagement.PinnedContentVersion.String(),
+			})
+		}
 		settings.vulnerabilityManagement = &vulnerabilityManagement
+	} else {
+		tflog.Debug(ctx, "vulnerabilityManagement is null, skipping extraction")
 	}
 
 	if !rapidResp.IsNull() {
+		tflog.Debug(ctx, "Extracting rapidResponse ring assignment")
 		var rapidResponse ringAssignmentModel
-		diags.Append(rapidResp.As(ctx, &rapidResponse, basetypes.ObjectAsOptions{})...)
+		rapidRespDiags := rapidResp.As(ctx, &rapidResponse, basetypes.ObjectAsOptions{})
+		diags.Append(rapidRespDiags...)
+		if rapidRespDiags.HasError() {
+			tflog.Debug(ctx, "Failed to extract rapid response ring assignment")
+		} else {
+			tflog.Debug(ctx, "Successfully extracted rapidResponse", map[string]interface{}{
+				"ring_assignment":        rapidResponse.RingAssignment.String(),
+				"delay_hours":            rapidResponse.DelayHours.String(),
+				"pinned_content_version": rapidResponse.PinnedContentVersion.String(),
+			})
+		}
 		settings.rapidResponse = &rapidResponse
+	} else {
+		tflog.Debug(ctx, "rapidResponse is null, skipping extraction")
 	}
+
+	tflog.Debug(ctx, "Completed extractRingAssignments", map[string]interface{}{
+		"total_errors":                      len(diags.Errors()),
+		"sensorOperations_extracted":        settings.sensorOperations != nil,
+		"systemCritical_extracted":          settings.systemCritical != nil,
+		"vulnerabilityManagement_extracted": settings.vulnerabilityManagement != nil,
+		"rapidResponse_extracted":           settings.rapidResponse != nil,
+	})
 
 	return settings, diags
 }

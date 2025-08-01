@@ -65,6 +65,13 @@ type contentPolicyResourceModel struct {
 func (d *contentPolicyResourceModel) extract(ctx context.Context) diag.Diagnostics {
 	var diags diag.Diagnostics
 
+	tflog.Debug(ctx, "Starting extract method", map[string]interface{}{
+		"sensor_operations":        d.SensorOperations.String(),
+		"system_critical":          d.SystemCritical.String(),
+		"vulnerability_management": d.VulnerabilityManagement.String(),
+		"rapid_response":           d.RapidResponse.String(),
+	})
+
 	d.settings, diags = extractRingAssignments(
 		ctx,
 		d.SensorOperations,
@@ -72,6 +79,12 @@ func (d *contentPolicyResourceModel) extract(ctx context.Context) diag.Diagnosti
 		d.VulnerabilityManagement,
 		d.RapidResponse,
 	)
+
+	if diags.HasError() {
+		tflog.Debug(ctx, "Failed to extract ring assignments from terraform objects")
+	} else {
+		tflog.Debug(ctx, "extract method completed successfully")
+	}
 
 	return diags
 }
@@ -171,29 +184,64 @@ func (d *contentPolicyResourceModel) wrap(
 	}
 
 	if d.settings != nil {
-		diags.Append(utils.ConvertModelToTerraformObject(
+		tflog.Debug(
+			ctx,
+			"Converting ring assignment models to terraform objects",
+			map[string]interface{}{
+				"system_critical_nil":          d.settings.systemCritical == nil,
+				"sensor_operations_nil":        d.settings.sensorOperations == nil,
+				"rapid_response_nil":           d.settings.rapidResponse == nil,
+				"vulnerability_management_nil": d.settings.vulnerabilityManagement == nil,
+			},
+		)
+
+		tflog.Debug(ctx, "Converting systemCritical to terraform object")
+		systemCriticalDiags := utils.ConvertModelToTerraformObject(
 			ctx,
 			d.settings.systemCritical,
 			&d.SystemCritical,
-		)...)
+		)
+		diags.Append(systemCriticalDiags...)
+		if systemCriticalDiags.HasError() {
+			tflog.Debug(ctx, "Failed to convert systemCritical to terraform object")
+		}
 
-		diags.Append(utils.ConvertModelToTerraformObject(
+		tflog.Debug(ctx, "Converting sensorOperations to terraform object")
+		sensorOperationsDiags := utils.ConvertModelToTerraformObject(
 			ctx,
 			d.settings.sensorOperations,
 			&d.SensorOperations,
-		)...)
+		)
+		diags.Append(sensorOperationsDiags...)
+		if sensorOperationsDiags.HasError() {
+			tflog.Debug(ctx, "Failed to convert sensorOperations to terraform object")
+		}
 
-		diags.Append(utils.ConvertModelToTerraformObject(
+		tflog.Debug(ctx, "Converting rapidResponse to terraform object")
+		rapidResponseDiags := utils.ConvertModelToTerraformObject(
 			ctx,
 			d.settings.rapidResponse,
 			&d.RapidResponse,
-		)...)
+		)
+		diags.Append(rapidResponseDiags...)
+		if rapidResponseDiags.HasError() {
+			tflog.Debug(ctx, "Failed to convert rapidResponse to terraform object")
+		}
 
-		diags.Append(utils.ConvertModelToTerraformObject(
+		tflog.Debug(ctx, "Converting vulnerabilityManagement to terraform object")
+		vulnerabilityManagementDiags := utils.ConvertModelToTerraformObject(
 			ctx,
 			d.settings.vulnerabilityManagement,
 			&d.VulnerabilityManagement,
-		)...)
+		)
+		diags.Append(vulnerabilityManagementDiags...)
+		if vulnerabilityManagementDiags.HasError() {
+			tflog.Debug(ctx, "Failed to convert vulnerabilityManagement to terraform object")
+		}
+
+		tflog.Debug(ctx, "Completed converting all ring assignment models")
+	} else {
+		tflog.Debug(ctx, "d.settings is nil, skipping conversion")
 	}
 
 	return diags
@@ -826,26 +874,92 @@ func (r *contentPolicyResource) ModifyPlan(
 	req resource.ModifyPlanRequest,
 	resp *resource.ModifyPlanResponse,
 ) {
+	tflog.Debug(ctx, "Starting ModifyPlan method")
+
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
+		return
+	}
 	if req.State.Raw.IsNull() {
+		tflog.Debug(ctx, "State is null, skipping ModifyPlan validation")
 		return
 	}
 
+	if req.Plan.Raw.IsNull() {
+		tflog.Debug(ctx, "Plan is null, skipping ModifyPlan validation")
+		return
+	}
+
+	tflog.Debug(ctx, "Getting plan from request")
 	var plan contentPolicyResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	resp.Diagnostics.Append(plan.extract(ctx)...)
-	if resp.Diagnostics.HasError() {
+	planGetDiags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(planGetDiags...)
+	if planGetDiags.HasError() {
+		tflog.Debug(ctx, "Failed to get plan in ModifyPlan")
 		return
 	}
 
+	tflog.Debug(ctx, "Plan retrieved successfully, extracting plan settings")
+	planExtractDiags := plan.extract(ctx)
+	resp.Diagnostics.Append(planExtractDiags...)
+	if planExtractDiags.HasError() {
+		tflog.Debug(ctx, "Failed to extract plan settings in ModifyPlan")
+		return
+	}
+
+	tflog.Debug(ctx, "Plan extracted successfully, getting state from request")
 	var state contentPolicyResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	resp.Diagnostics.Append(state.extract(ctx)...)
-	if resp.Diagnostics.HasError() {
+	stateGetDiags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(stateGetDiags...)
+	if stateGetDiags.HasError() {
+		tflog.Debug(ctx, "Failed to get state in ModifyPlan")
 		return
 	}
 
-	resp.Diagnostics.Append(
-		validateContentUpdatePolicyModifyPlan(state.settings, plan.settings)...)
+	tflog.Debug(ctx, "State retrieved successfully, extracting state settings")
+	stateExtractDiags := state.extract(ctx)
+	resp.Diagnostics.Append(stateExtractDiags...)
+	if stateExtractDiags.HasError() {
+		tflog.Debug(ctx, "Failed to extract state settings in ModifyPlan")
+		return
+	}
+
+	tflog.Debug(ctx, "Both plan and state extracted successfully, starting validation")
+	tflog.Debug(ctx, "State and plan settings comparison", map[string]interface{}{
+		"state_settings_nil": state.settings == nil,
+		"plan_settings_nil":  plan.settings == nil,
+	})
+
+	if state.settings != nil {
+		tflog.Debug(ctx, "State settings details", map[string]interface{}{
+			"sensorOperations_nil":        state.settings.sensorOperations == nil,
+			"systemCritical_nil":          state.settings.systemCritical == nil,
+			"vulnerabilityManagement_nil": state.settings.vulnerabilityManagement == nil,
+			"rapidResponse_nil":           state.settings.rapidResponse == nil,
+		})
+	}
+
+	if plan.settings != nil {
+		tflog.Debug(ctx, "Plan settings details", map[string]interface{}{
+			"sensorOperations_nil":        plan.settings.sensorOperations == nil,
+			"systemCritical_nil":          plan.settings.systemCritical == nil,
+			"vulnerabilityManagement_nil": plan.settings.vulnerabilityManagement == nil,
+			"rapidResponse_nil":           plan.settings.rapidResponse == nil,
+		})
+	}
+
+	validationDiags := validateContentUpdatePolicyModifyPlan(ctx, state.settings, plan.settings)
+	resp.Diagnostics.Append(validationDiags...)
+
+	if validationDiags.HasError() {
+		tflog.Debug(ctx, "ModifyPlan validation failed")
+	} else {
+		tflog.Debug(ctx, "ModifyPlan validation completed successfully")
+	}
+
+	tflog.Debug(ctx, "ModifyPlan method completed", map[string]interface{}{
+		"total_diagnostics": len(resp.Diagnostics),
+		"has_errors":        resp.Diagnostics.HasError(),
+	})
 }
 
 // updateHostGroups will remove or add a slice of host groups to a content update policy.
