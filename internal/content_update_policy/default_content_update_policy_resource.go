@@ -298,8 +298,6 @@ func (r *defaultContentUpdatePolicyResource) Create(
 	req resource.CreateRequest,
 	resp *resource.CreateResponse,
 ) {
-	tflog.Debug(ctx, "Starting default content update policy create operation")
-
 	var plan defaultContentUpdatePolicyResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(plan.extract(ctx)...)
@@ -620,12 +618,8 @@ func (r *defaultContentUpdatePolicyResource) ModifyPlan(
 	req resource.ModifyPlanRequest,
 	resp *resource.ModifyPlanResponse,
 ) {
-
 	tflog.Debug(ctx, "Starting ModifyPlan method")
 
-	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
-		return
-	}
 	if req.State.Raw.IsNull() {
 		tflog.Debug(ctx, "State is null, skipping ModifyPlan validation")
 		return
@@ -636,22 +630,72 @@ func (r *defaultContentUpdatePolicyResource) ModifyPlan(
 		return
 	}
 
+	tflog.Debug(ctx, "Getting plan from request")
 	var plan defaultContentUpdatePolicyResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	resp.Diagnostics.Append(plan.extract(ctx)...)
-	if resp.Diagnostics.HasError() {
+	planGetDiags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(planGetDiags...)
+	if planGetDiags.HasError() {
+		tflog.Debug(ctx, "Failed to get plan in ModifyPlan")
+		return
+	}
+
+	planExtractDiags := plan.extract(ctx)
+	resp.Diagnostics.Append(planExtractDiags...)
+	if planExtractDiags.HasError() {
+		tflog.Debug(ctx, "Failed to extract plan settings in ModifyPlan")
 		return
 	}
 
 	var state defaultContentUpdatePolicyResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	resp.Diagnostics.Append(state.extract(ctx)...)
-	if resp.Diagnostics.HasError() {
+	stateGetDiags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(stateGetDiags...)
+	if stateGetDiags.HasError() {
+		tflog.Debug(ctx, "Failed to get state in ModifyPlan")
 		return
 	}
 
-	resp.Diagnostics.Append(
-		validateContentUpdatePolicyModifyPlan(ctx, state.settings, plan.settings)...)
+	stateExtractDiags := state.extract(ctx)
+	resp.Diagnostics.Append(stateExtractDiags...)
+	if stateExtractDiags.HasError() {
+		tflog.Debug(ctx, "Failed to extract state settings in ModifyPlan")
+		return
+	}
+	tflog.Debug(ctx, "State and plan settings comparison", map[string]interface{}{
+		"state_settings_nil": state.settings == nil,
+		"plan_settings_nil":  plan.settings == nil,
+	})
+
+	if state.settings != nil {
+		tflog.Debug(ctx, "State settings details", map[string]interface{}{
+			"sensorOperations_nil":        state.settings.sensorOperations == nil,
+			"systemCritical_nil":          state.settings.systemCritical == nil,
+			"vulnerabilityManagement_nil": state.settings.vulnerabilityManagement == nil,
+			"rapidResponse_nil":           state.settings.rapidResponse == nil,
+		})
+	}
+
+	if plan.settings != nil {
+		tflog.Debug(ctx, "Plan settings details", map[string]interface{}{
+			"sensorOperations_nil":        plan.settings.sensorOperations == nil,
+			"systemCritical_nil":          plan.settings.systemCritical == nil,
+			"vulnerabilityManagement_nil": plan.settings.vulnerabilityManagement == nil,
+			"rapidResponse_nil":           plan.settings.rapidResponse == nil,
+		})
+	}
+
+	validationDiags := validateContentUpdatePolicyModifyPlan(ctx, state.settings, plan.settings)
+	resp.Diagnostics.Append(validationDiags...)
+
+	if validationDiags.HasError() {
+		tflog.Debug(ctx, "ModifyPlan validation failed")
+	} else {
+		tflog.Debug(ctx, "ModifyPlan validation completed successfully")
+	}
+
+	tflog.Debug(ctx, "ModifyPlan method completed", map[string]interface{}{
+		"total_diagnostics": len(resp.Diagnostics),
+		"has_errors":        resp.Diagnostics.HasError(),
+	})
 }
 
 func (r *defaultContentUpdatePolicyResource) updateDefaultPolicy(

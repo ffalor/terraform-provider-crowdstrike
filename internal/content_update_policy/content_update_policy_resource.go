@@ -195,51 +195,29 @@ func (d *contentPolicyResourceModel) wrap(
 			},
 		)
 
-		tflog.Debug(ctx, "Converting systemCritical to terraform object")
-		systemCriticalDiags := utils.ConvertModelToTerraformObject(
+		diags.Append(utils.ConvertModelToTerraformObject(
 			ctx,
 			d.settings.systemCritical,
 			&d.SystemCritical,
-		)
-		diags.Append(systemCriticalDiags...)
-		if systemCriticalDiags.HasError() {
-			tflog.Debug(ctx, "Failed to convert systemCritical to terraform object")
-		}
+		)...)
 
-		tflog.Debug(ctx, "Converting sensorOperations to terraform object")
-		sensorOperationsDiags := utils.ConvertModelToTerraformObject(
+		diags.Append(utils.ConvertModelToTerraformObject(
 			ctx,
 			d.settings.sensorOperations,
 			&d.SensorOperations,
-		)
-		diags.Append(sensorOperationsDiags...)
-		if sensorOperationsDiags.HasError() {
-			tflog.Debug(ctx, "Failed to convert sensorOperations to terraform object")
-		}
+		)...)
 
-		tflog.Debug(ctx, "Converting rapidResponse to terraform object")
-		rapidResponseDiags := utils.ConvertModelToTerraformObject(
+		diags.Append(utils.ConvertModelToTerraformObject(
 			ctx,
 			d.settings.rapidResponse,
 			&d.RapidResponse,
-		)
-		diags.Append(rapidResponseDiags...)
-		if rapidResponseDiags.HasError() {
-			tflog.Debug(ctx, "Failed to convert rapidResponse to terraform object")
-		}
+		)...)
 
-		tflog.Debug(ctx, "Converting vulnerabilityManagement to terraform object")
-		vulnerabilityManagementDiags := utils.ConvertModelToTerraformObject(
+		diags.Append(utils.ConvertModelToTerraformObject(
 			ctx,
 			d.settings.vulnerabilityManagement,
 			&d.VulnerabilityManagement,
-		)
-		diags.Append(vulnerabilityManagementDiags...)
-		if vulnerabilityManagementDiags.HasError() {
-			tflog.Debug(ctx, "Failed to convert vulnerabilityManagement to terraform object")
-		}
-
-		tflog.Debug(ctx, "Completed converting all ring assignment models")
+		)...)
 	} else {
 		tflog.Debug(ctx, "d.settings is nil, skipping conversion")
 	}
@@ -876,54 +854,78 @@ func (r *contentPolicyResource) ModifyPlan(
 ) {
 	tflog.Debug(ctx, "Starting ModifyPlan method")
 
-	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
-		return
-	}
+	// Check if this is a resource creation (state is null)
 	if req.State.Raw.IsNull() {
 		tflog.Debug(ctx, "State is null, skipping ModifyPlan validation")
 		return
 	}
 
+	// Check if this is a resource destruction (plan is null)
 	if req.Plan.Raw.IsNull() {
 		tflog.Debug(ctx, "Plan is null, skipping ModifyPlan validation")
 		return
 	}
-
-	tflog.Debug(ctx, "Getting plan from request")
 	var plan contentPolicyResourceModel
 	planGetDiags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(planGetDiags...)
 	if planGetDiags.HasError() {
-		tflog.Debug(ctx, "Failed to get plan in ModifyPlan")
+		tflog.Debug(ctx, "Failed to get plan in ModifyPlan", map[string]interface{}{
+			"error_count": len(planGetDiags.Errors()),
+		})
 		return
 	}
 
-	tflog.Debug(ctx, "Plan retrieved successfully, extracting plan settings")
+	// Check if the plan contains the required objects before attempting extraction
+	if plan.SensorOperations.IsNull() || plan.SystemCritical.IsNull() ||
+		plan.VulnerabilityManagement.IsNull() || plan.RapidResponse.IsNull() {
+		tflog.Debug(ctx, "Plan contains null required objects, skipping validation", map[string]interface{}{
+			"sensor_operations_null":        plan.SensorOperations.IsNull(),
+			"system_critical_null":          plan.SystemCritical.IsNull(),
+			"vulnerability_management_null": plan.VulnerabilityManagement.IsNull(),
+			"rapid_response_null":           plan.RapidResponse.IsNull(),
+		})
+		return
+	}
+
 	planExtractDiags := plan.extract(ctx)
 	resp.Diagnostics.Append(planExtractDiags...)
 	if planExtractDiags.HasError() {
-		tflog.Debug(ctx, "Failed to extract plan settings in ModifyPlan")
+		tflog.Debug(ctx, "Failed to extract plan settings in ModifyPlan", map[string]interface{}{
+			"error_count": len(planExtractDiags.Errors()),
+		})
 		return
 	}
 
-	tflog.Debug(ctx, "Plan extracted successfully, getting state from request")
 	var state contentPolicyResourceModel
 	stateGetDiags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(stateGetDiags...)
 	if stateGetDiags.HasError() {
-		tflog.Debug(ctx, "Failed to get state in ModifyPlan")
+		tflog.Debug(ctx, "Failed to get state in ModifyPlan", map[string]interface{}{
+			"error_count": len(stateGetDiags.Errors()),
+		})
 		return
 	}
 
-	tflog.Debug(ctx, "State retrieved successfully, extracting state settings")
+	// Check if the state contains the required objects before attempting extraction
+	if state.SensorOperations.IsNull() || state.SystemCritical.IsNull() ||
+		state.VulnerabilityManagement.IsNull() || state.RapidResponse.IsNull() {
+		tflog.Debug(ctx, "State contains null required objects, skipping validation", map[string]interface{}{
+			"sensor_operations_null":        state.SensorOperations.IsNull(),
+			"system_critical_null":          state.SystemCritical.IsNull(),
+			"vulnerability_management_null": state.VulnerabilityManagement.IsNull(),
+			"rapid_response_null":           state.RapidResponse.IsNull(),
+		})
+		return
+	}
+
 	stateExtractDiags := state.extract(ctx)
 	resp.Diagnostics.Append(stateExtractDiags...)
 	if stateExtractDiags.HasError() {
-		tflog.Debug(ctx, "Failed to extract state settings in ModifyPlan")
+		tflog.Debug(ctx, "Failed to extract state settings in ModifyPlan", map[string]interface{}{
+			"error_count": len(stateExtractDiags.Errors()),
+		})
 		return
 	}
-
-	tflog.Debug(ctx, "Both plan and state extracted successfully, starting validation")
 	tflog.Debug(ctx, "State and plan settings comparison", map[string]interface{}{
 		"state_settings_nil": state.settings == nil,
 		"plan_settings_nil":  plan.settings == nil,
