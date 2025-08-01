@@ -866,12 +866,8 @@ func (r *contentPolicyResource) ModifyPlan(
 		return
 	}
 	var plan contentPolicyResourceModel
-	planGetDiags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(planGetDiags...)
-	if planGetDiags.HasError() {
-		tflog.Debug(ctx, "Failed to get plan in ModifyPlan", map[string]interface{}{
-			"error_count": len(planGetDiags.Errors()),
-		})
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -887,22 +883,14 @@ func (r *contentPolicyResource) ModifyPlan(
 		return
 	}
 
-	planExtractDiags := plan.extract(ctx)
-	resp.Diagnostics.Append(planExtractDiags...)
-	if planExtractDiags.HasError() {
-		tflog.Debug(ctx, "Failed to extract plan settings in ModifyPlan", map[string]interface{}{
-			"error_count": len(planExtractDiags.Errors()),
-		})
+	resp.Diagnostics.Append(plan.extract(ctx)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	var state contentPolicyResourceModel
-	stateGetDiags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(stateGetDiags...)
-	if stateGetDiags.HasError() {
-		tflog.Debug(ctx, "Failed to get state in ModifyPlan", map[string]interface{}{
-			"error_count": len(stateGetDiags.Errors()),
-		})
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -918,12 +906,8 @@ func (r *contentPolicyResource) ModifyPlan(
 		return
 	}
 
-	stateExtractDiags := state.extract(ctx)
-	resp.Diagnostics.Append(stateExtractDiags...)
-	if stateExtractDiags.HasError() {
-		tflog.Debug(ctx, "Failed to extract state settings in ModifyPlan", map[string]interface{}{
-			"error_count": len(stateExtractDiags.Errors()),
-		})
+	resp.Diagnostics.Append(state.extract(ctx)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 	tflog.Debug(ctx, "State and plan settings comparison", map[string]interface{}{

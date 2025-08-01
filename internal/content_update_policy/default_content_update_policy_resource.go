@@ -630,34 +630,25 @@ func (r *defaultContentUpdatePolicyResource) ModifyPlan(
 		return
 	}
 
-	tflog.Debug(ctx, "Getting plan from request")
 	var plan defaultContentUpdatePolicyResourceModel
-	planGetDiags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(planGetDiags...)
-	if planGetDiags.HasError() {
-		tflog.Debug(ctx, "Failed to get plan in ModifyPlan")
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	planExtractDiags := plan.extract(ctx)
-	resp.Diagnostics.Append(planExtractDiags...)
-	if planExtractDiags.HasError() {
-		tflog.Debug(ctx, "Failed to extract plan settings in ModifyPlan")
+	resp.Diagnostics.Append(plan.extract(ctx)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	var state defaultContentUpdatePolicyResourceModel
-	stateGetDiags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(stateGetDiags...)
-	if stateGetDiags.HasError() {
-		tflog.Debug(ctx, "Failed to get state in ModifyPlan")
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	stateExtractDiags := state.extract(ctx)
-	resp.Diagnostics.Append(stateExtractDiags...)
-	if stateExtractDiags.HasError() {
-		tflog.Debug(ctx, "Failed to extract state settings in ModifyPlan")
+	resp.Diagnostics.Append(state.extract(ctx)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 	tflog.Debug(ctx, "State and plan settings comparison", map[string]interface{}{
