@@ -78,10 +78,79 @@ func (d *defaultContentUpdatePolicyResourceModel) wrap(
 	d.ID = types.StringValue(*policy.ID)
 	d.Description = types.StringPointerValue(policy.Description)
 
-	d.SensorOperations, d.SystemCritical, d.VulnerabilityManagement, d.RapidResponse, diags = populateRingAssignments(
-		ctx,
-		policy,
-	)
+	if policy.Settings != nil && policy.Settings.RingAssignmentSettings != nil {
+		for _, setting := range policy.Settings.RingAssignmentSettings {
+			switch *setting.ID {
+			case "sensor_operations":
+				if d.settings != nil && d.settings.sensorOperations != nil {
+					diags.Append(d.settings.sensorOperations.wrap(setting)...)
+				}
+			case "system_critical":
+				if d.settings != nil && d.settings.systemCritical != nil {
+
+					diags.Append(d.settings.systemCritical.wrap(setting)...)
+				}
+			case "vulnerability_management":
+				if d.settings != nil && d.settings.vulnerabilityManagement != nil {
+					diags.Append(d.settings.vulnerabilityManagement.wrap(setting)...)
+				}
+			case "rapid_response_al_bl_listing":
+				if d.settings != nil && d.settings.rapidResponse != nil {
+
+					diags.Append(d.settings.rapidResponse.wrap(setting)...)
+				}
+			}
+		}
+	}
+
+	// Convert the updated models back to terraform objects
+	if d.settings != nil && d.settings.sensorOperations != nil {
+		sensorOps, ringDiag := types.ObjectValueFrom(
+			ctx,
+			d.settings.sensorOperations.AttributeTypes(),
+			d.settings.sensorOperations,
+		)
+		diags.Append(ringDiag...)
+		d.SensorOperations = sensorOps
+	} else {
+		d.SensorOperations = types.ObjectNull(ringAssignmentModel{}.AttributeTypes())
+	}
+
+	if d.settings != nil && d.settings.systemCritical != nil {
+		systemCrit, ringDiag := types.ObjectValueFrom(
+			ctx,
+			d.settings.systemCritical.AttributeTypes(),
+			d.settings.systemCritical,
+		)
+		diags.Append(ringDiag...)
+		d.SystemCritical = systemCrit
+	} else {
+		d.SystemCritical = types.ObjectNull(ringAssignmentModel{}.AttributeTypes())
+	}
+
+	if d.settings != nil && d.settings.vulnerabilityManagement != nil {
+		vulnMgmt, ringDiag := types.ObjectValueFrom(
+			ctx,
+			d.settings.vulnerabilityManagement.AttributeTypes(),
+			d.settings.vulnerabilityManagement,
+		)
+		diags.Append(ringDiag...)
+		d.VulnerabilityManagement = vulnMgmt
+	} else {
+		d.VulnerabilityManagement = types.ObjectNull(ringAssignmentModel{}.AttributeTypes())
+	}
+
+	if d.settings != nil && d.settings.rapidResponse != nil {
+		rapidResp, ringDiag := types.ObjectValueFrom(
+			ctx,
+			d.settings.rapidResponse.AttributeTypes(),
+			d.settings.rapidResponse,
+		)
+		diags.Append(ringDiag...)
+		d.RapidResponse = rapidResp
+	} else {
+		d.RapidResponse = types.ObjectNull(ringAssignmentModel{}.AttributeTypes())
+	}
 
 	return diags
 }
@@ -296,7 +365,9 @@ func (r *defaultContentUpdatePolicyResource) Create(
 	// Extract current settings to compare with planned
 	currentSettings, diags := extractRingAssignments(
 		ctx,
-		types.ObjectNull(ringAssignmentModel{}.AttributeTypes()), // Start with null since we're reading from API
+		types.ObjectNull(
+			ringAssignmentModel{}.AttributeTypes(),
+		), // Start with null since we're reading from API
 		types.ObjectNull(ringAssignmentModel{}.AttributeTypes()),
 		types.ObjectNull(ringAssignmentModel{}.AttributeTypes()),
 		types.ObjectNull(ringAssignmentModel{}.AttributeTypes()),
@@ -332,7 +403,13 @@ func (r *defaultContentUpdatePolicyResource) Create(
 		}
 	}
 
-	err := managePinnedContentVersions(ctx, r.client, plan.ID.ValueString(), currentSettings, plan.settings)
+	err := managePinnedContentVersions(
+		ctx,
+		r.client,
+		plan.ID.ValueString(),
+		currentSettings,
+		plan.settings,
+	)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error setting pinned content versions",
@@ -439,7 +516,13 @@ func (r *defaultContentUpdatePolicyResource) Update(
 	}
 
 	// Handle pinned content versions
-	err := managePinnedContentVersions(ctx, r.client, plan.ID.ValueString(), state.settings, plan.settings)
+	err := managePinnedContentVersions(
+		ctx,
+		r.client,
+		plan.ID.ValueString(),
+		state.settings,
+		plan.settings,
+	)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating pinned content versions",

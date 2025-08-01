@@ -182,3 +182,27 @@ func MissingElements(a, b []string) []string {
 
 	return missing
 }
+
+// SetInt64FromAPIIfNotZero sets an Int64 value from API response, keeping null if current is null and API value is 0
+func SetInt64FromAPIIfNotZero(currentValue types.Int64, apiValue int64) types.Int64 {
+	if currentValue.IsNull() && apiValue == 0 {
+		return types.Int64Null()
+	}
+	return types.Int64Value(apiValue)
+}
+
+// SetStringFromAPIIfNotEmpty sets a String value from API response, keeping null if current is null and API value is ""
+func SetStringFromAPIIfNotEmpty(currentValue types.String, apiValue string) types.String {
+	if currentValue.IsNull() && apiValue == "" {
+		return types.StringNull()
+	}
+	return types.StringValue(apiValue)
+}
+
+// OptionalString converts a string pointer to types.String, returning null if pointer is nil or empty
+func OptionalString(value *string) types.String {
+	if value != nil && *value != "" {
+		return types.StringPointerValue(value)
+	}
+	return types.StringNull()
+}

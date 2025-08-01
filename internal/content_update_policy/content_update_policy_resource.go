@@ -165,17 +165,82 @@ func (d *contentPolicyResourceModel) wrap(
 		d.HostGroups = hostGroupSet
 	}
 
-	// Use shared function to populate ring assignments
-	sensorOps, systemCrit, vulnMgmt, rapidResp, ringDiags := populateRingAssignments(ctx, policy)
-	diags.Append(ringDiags...)
-	if diags.HasError() {
-		return diags
+	// Update ring assignments using the extracted models (which preserve user intent)
+	if policy.Settings != nil && policy.Settings.RingAssignmentSettings != nil {
+		for _, setting := range policy.Settings.RingAssignmentSettings {
+			switch *setting.ID {
+			case "sensor_operations":
+				if d.sensorOperations != nil {
+					ringDiags := d.sensorOperations.wrap(setting)
+					diags.Append(ringDiags...)
+				}
+			case "system_critical":
+				if d.systemCritical != nil {
+					ringDiags := d.systemCritical.wrap(setting)
+					diags.Append(ringDiags...)
+				}
+			case "vulnerability_management":
+				if d.vulnerabilityManagement != nil {
+					ringDiags := d.vulnerabilityManagement.wrap(setting)
+					diags.Append(ringDiags...)
+				}
+			case "rapid_response_al_bl_listing":
+				if d.rapidResponse != nil {
+					ringDiags := d.rapidResponse.wrap(setting)
+					diags.Append(ringDiags...)
+				}
+			}
+		}
 	}
 
-	d.SensorOperations = sensorOps
-	d.SystemCritical = systemCrit
-	d.VulnerabilityManagement = vulnMgmt
-	d.RapidResponse = rapidResp
+	// Convert the updated models back to terraform objects
+	if d.sensorOperations != nil {
+		sensorOps, ringDiag := types.ObjectValueFrom(
+			ctx,
+			d.sensorOperations.AttributeTypes(),
+			d.sensorOperations,
+		)
+		diags.Append(ringDiag...)
+		d.SensorOperations = sensorOps
+	} else {
+		d.SensorOperations = types.ObjectNull(ringAssignmentModel{}.AttributeTypes())
+	}
+
+	if d.systemCritical != nil {
+		systemCrit, ringDiag := types.ObjectValueFrom(
+			ctx,
+			d.systemCritical.AttributeTypes(),
+			d.systemCritical,
+		)
+		diags.Append(ringDiag...)
+		d.SystemCritical = systemCrit
+	} else {
+		d.SystemCritical = types.ObjectNull(ringAssignmentModel{}.AttributeTypes())
+	}
+
+	if d.vulnerabilityManagement != nil {
+		vulnMgmt, ringDiag := types.ObjectValueFrom(
+			ctx,
+			d.vulnerabilityManagement.AttributeTypes(),
+			d.vulnerabilityManagement,
+		)
+		diags.Append(ringDiag...)
+		d.VulnerabilityManagement = vulnMgmt
+	} else {
+		d.VulnerabilityManagement = types.ObjectNull(ringAssignmentModel{}.AttributeTypes())
+	}
+
+	if d.rapidResponse != nil {
+		rapidResp, ringDiag := types.ObjectValueFrom(
+			ctx,
+			d.rapidResponse.AttributeTypes(),
+			d.rapidResponse,
+		)
+		diags.Append(ringDiag...)
+		d.RapidResponse = rapidResp
+	} else {
+		d.RapidResponse = types.ObjectNull(ringAssignmentModel{}.AttributeTypes())
+	}
 
 	return diags
 }
@@ -483,7 +548,10 @@ func (r *contentPolicyResource) Read(
 			if strings.Contains(diag.Summary(), "not found") {
 				tflog.Warn(
 					ctx,
-					fmt.Sprintf("content update policy %s not found, removing from state", state.ID),
+					fmt.Sprintf(
+						"content update policy %s not found, removing from state",
+						state.ID,
+					),
 				)
 				resp.State.RemoveResource(ctx)
 				return
@@ -625,7 +693,12 @@ func (r *contentPolicyResource) Update(
 	plan.LastUpdated = utils.GenerateUpdateTimestamp()
 
 	if plan.Enabled.ValueBool() != state.Enabled.ValueBool() {
-		err := updatePolicyEnabledState(ctx, r.client, plan.ID.ValueString(), plan.Enabled.ValueBool())
+		err := updatePolicyEnabledState(
+			ctx,
+			r.client,
+			plan.ID.ValueString(),
+			plan.Enabled.ValueBool(),
+		)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error changing content update policy enabled state",
@@ -636,7 +709,13 @@ func (r *contentPolicyResource) Update(
 	}
 
 	// Handle pinned content versions
-	err = managePinnedContentVersions(ctx, r.client, plan.ID.ValueString(), currentSettings, plannedSettings)
+	err = managePinnedContentVersions(
+		ctx,
+		r.client,
+		plan.ID.ValueString(),
+		currentSettings,
+		plannedSettings,
+	)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating pinned content versions",
@@ -731,45 +810,57 @@ func (r *contentPolicyResource) ValidateConfig(
 	resp.Diagnostics.Append(utils.ValidateEmptyIDs(ctx, config.HostGroups, "host_groups")...)
 
 	if config.sensorOperations != nil {
-		if config.sensorOperations.RingAssignment.ValueString() != "ga" && !config.sensorOperations.DelayHours.IsNull() {
+		if config.sensorOperations.RingAssignment.ValueString() != "ga" &&
+			!config.sensorOperations.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("sensor_operations").AtName("delay_hours"),
 				"Invalid delay_hours configuration",
-				fmt.Sprintf("delay_hours can only be set when ring_assignment is 'ga'. sensor_operations has ring_assignment '%s' but delay_hours is set.",
-					config.sensorOperations.RingAssignment.ValueString()),
+				fmt.Sprintf(
+					"delay_hours can only be set when ring_assignment is 'ga'. sensor_operations has ring_assignment '%s' but delay_hours is set.",
+					config.sensorOperations.RingAssignment.ValueString(),
+				),
 			)
 		}
 	}
 
 	if config.systemCritical != nil {
-		if config.systemCritical.RingAssignment.ValueString() != "ga" && !config.systemCritical.DelayHours.IsNull() {
+		if config.systemCritical.RingAssignment.ValueString() != "ga" &&
+			!config.systemCritical.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("system_critical").AtName("delay_hours"),
 				"Invalid delay_hours configuration",
-				fmt.Sprintf("delay_hours can only be set when ring_assignment is 'ga'. system_critical has ring_assignment '%s' but delay_hours is set.",
-					config.systemCritical.RingAssignment.ValueString()),
+				fmt.Sprintf(
+					"delay_hours can only be set when ring_assignment is 'ga'. system_critical has ring_assignment '%s' but delay_hours is set.",
+					config.systemCritical.RingAssignment.ValueString(),
+				),
 			)
 		}
 	}
 
 	if config.vulnerabilityManagement != nil {
-		if config.vulnerabilityManagement.RingAssignment.ValueString() != "ga" && !config.vulnerabilityManagement.DelayHours.IsNull() {
+		if config.vulnerabilityManagement.RingAssignment.ValueString() != "ga" &&
+			!config.vulnerabilityManagement.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("vulnerability_management").AtName("delay_hours"),
 				"Invalid delay_hours configuration",
-				fmt.Sprintf("delay_hours can only be set when ring_assignment is 'ga'. vulnerability_management has ring_assignment '%s' but delay_hours is set.",
-					config.vulnerabilityManagement.RingAssignment.ValueString()),
+				fmt.Sprintf(
+					"delay_hours can only be set when ring_assignment is 'ga'. vulnerability_management has ring_assignment '%s' but delay_hours is set.",
+					config.vulnerabilityManagement.RingAssignment.ValueString(),
+				),
 			)
 		}
 	}
 
 	if config.rapidResponse != nil {
-		if config.rapidResponse.RingAssignment.ValueString() != "ga" && !config.rapidResponse.DelayHours.IsNull() {
+		if config.rapidResponse.RingAssignment.ValueString() != "ga" &&
+			!config.rapidResponse.DelayHours.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("rapid_response").AtName("delay_hours"),
 				"Invalid delay_hours configuration",
-				fmt.Sprintf("delay_hours can only be set when ring_assignment is 'ga'. rapid_response has ring_assignment '%s' but delay_hours is set.",
-					config.rapidResponse.RingAssignment.ValueString()),
+				fmt.Sprintf(
+					"delay_hours can only be set when ring_assignment is 'ga'. rapid_response has ring_assignment '%s' but delay_hours is set.",
+					config.rapidResponse.RingAssignment.ValueString(),
+				),
 			)
 		}
 	}

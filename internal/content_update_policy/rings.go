@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/crowdstrike/gofalcon/falcon/models"
+	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -28,6 +29,34 @@ func (r ringAssignmentModel) AttributeTypes() map[string]attr.Type {
 		"delay_hours":            types.Int64Type,
 		"pinned_content_version": types.StringType,
 	}
+}
+
+// extract extracts the Go values from their terraform wrapped values.
+func (r *ringAssignmentModel) wrap(
+	setting *models.ContentUpdateRingAssignmentSettingsV1,
+) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	r.RingAssignment = types.StringPointerValue(setting.RingAssignment)
+
+	if *setting.RingAssignment == "ga" {
+		delayHours := int64(0)
+		if setting.DelayHours != nil {
+			if delayStr := *setting.DelayHours; delayStr != "" {
+				if delay, err := strconv.ParseInt(delayStr, 10, 64); err == nil {
+					delayHours = delay
+				}
+			}
+		}
+
+		r.DelayHours = utils.SetInt64FromAPIIfNotZero(r.DelayHours, delayHours)
+	} else {
+		r.DelayHours = types.Int64Null()
+	}
+
+	r.PinnedContentVersion = utils.OptionalString(setting.PinnedContentVersion)
+
+	return diags
 }
 
 // Valid ring assignments.
