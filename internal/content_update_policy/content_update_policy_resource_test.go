@@ -14,8 +14,9 @@ import (
 
 // ringConfig represents a ring assignment configuration.
 type ringConfig struct {
-	RingAssignment string
-	DelayHours     *int
+	RingAssignment        string
+	DelayHours           *int
+	PinnedContentVersion *string
 }
 
 // policyConfig represents a complete policy configuration.
@@ -65,32 +66,28 @@ resource "crowdstrike_content_update_policy" "test" {
   %s
 
   sensor_operations = {
-    ring_assignment = %q
-	%s
+    ring_assignment = %q%s
   }
 
   system_critical = {
-    ring_assignment = %q
-	%s
+    ring_assignment = %q%s
   }
 
   vulnerability_management = {
-    ring_assignment = %q
-	%s
+    ring_assignment = %q%s
   }
 
   rapid_response = {
-    ring_assignment = %q
-	%s
+    ring_assignment = %q%s
   }
   
   %s
 }
 `, hostGroupResources, config.Name, config.Description, config.formatEnabled(),
-		config.SensorOperations.RingAssignment, config.SensorOperations.formatDelayHours(),
-		config.SystemCritical.RingAssignment, config.SystemCritical.formatDelayHours(),
-		config.VulnerabilityManagement.RingAssignment, config.VulnerabilityManagement.formatDelayHours(),
-		config.RapidResponse.RingAssignment, config.RapidResponse.formatDelayHours(),
+		config.SensorOperations.RingAssignment, config.SensorOperations.formatAllAttributes(),
+		config.SystemCritical.RingAssignment, config.SystemCritical.formatAllAttributes(),
+		config.VulnerabilityManagement.RingAssignment, config.VulnerabilityManagement.formatAllAttributes(),
+		config.RapidResponse.RingAssignment, config.RapidResponse.formatAllAttributes(),
 		hostGroupsBlock)
 }
 
@@ -107,6 +104,33 @@ func (config ringConfig) formatDelayHours() string {
 		return ""
 	}
 	return fmt.Sprintf("delay_hours     = %d", *config.DelayHours)
+}
+
+func (config ringConfig) formatPinnedContentVersion() string {
+	if config.PinnedContentVersion == nil {
+		return ""
+	}
+	return fmt.Sprintf("pinned_content_version = %q", *config.PinnedContentVersion)
+}
+
+func (config ringConfig) formatAllAttributes() string {
+	var attrs []string
+	
+	delayHours := config.formatDelayHours()
+	if delayHours != "" {
+		attrs = append(attrs, delayHours)
+	}
+	
+	pinnedVersion := config.formatPinnedContentVersion()
+	if pinnedVersion != "" {
+		attrs = append(attrs, pinnedVersion)
+	}
+	
+	if len(attrs) == 0 {
+		return ""
+	}
+	
+	return "\n    " + strings.Join(attrs, "\n    ")
 }
 
 func (config policyConfig) resourceName() string {
