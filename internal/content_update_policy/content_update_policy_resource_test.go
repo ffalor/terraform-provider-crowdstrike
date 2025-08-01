@@ -35,9 +35,16 @@ type policyConfig struct {
 func (config *policyConfig) String() string {
 	var hostGroupResources string
 	var hostGroupsBlock string
+	var dataSourceConfig string
 
 	randomSuffix := sdkacctest.RandString(8)
 	config.Name = fmt.Sprintf("%s-%s", config.Name, randomSuffix)
+
+	if config.needsDataSource() {
+		dataSourceConfig = `
+data "crowdstrike_content_category_versions" "available" {}
+`
+	}
 
 	if config.HostGroupCount > 0 {
 		var hostGroupRefs []string
@@ -59,7 +66,7 @@ resource "crowdstrike_host_group" "hg_%d" {
   host_groups = [%s]`, strings.Join(hostGroupRefs, ", "))
 	}
 
-	return fmt.Sprintf(`%s
+	return fmt.Sprintf(`%s%s
 resource "crowdstrike_content_update_policy" "test" {
   name        = %q
   description = %q
@@ -87,7 +94,7 @@ resource "crowdstrike_content_update_policy" "test" {
   
   %s
 }
-`, hostGroupResources, config.Name, config.Description, config.formatEnabled(),
+`, dataSourceConfig, hostGroupResources, config.Name, config.Description, config.formatEnabled(),
 		config.SensorOperations.RingAssignment, config.SensorOperations.formatDelayHours(),
 		config.SystemCritical.RingAssignment, config.SystemCritical.formatDelayHours(),
 		config.VulnerabilityManagement.RingAssignment, config.VulnerabilityManagement.formatDelayHours(),
@@ -173,7 +180,12 @@ func (ring ringConfig) generateChecks(category string) []resource.TestCheckFunc 
 
 	// Check pinned content version
 	if ring.PinnedContentVersion != nil {
-		checks = append(checks, resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", category+".pinned_content_version", *ring.PinnedContentVersion))
+		// For data source references, just check that the attribute is set with a non-empty value
+		if strings.Contains(*ring.PinnedContentVersion, "data.crowdstrike_content_category_versions") {
+			checks = append(checks, resource.TestCheckResourceAttrSet("crowdstrike_content_update_policy.test", category+".pinned_content_version"))
+		} else {
+			checks = append(checks, resource.TestCheckResourceAttr("crowdstrike_content_update_policy.test", category+".pinned_content_version", *ring.PinnedContentVersion))
+		}
 	} else {
 		checks = append(checks, resource.TestCheckNoResourceAttr("crowdstrike_content_update_policy.test", category+".pinned_content_version"))
 	}
@@ -363,21 +375,21 @@ func TestAccContentUpdatePolicyResource_PinnedContentVersions(t *testing.T) {
 				Enabled:     utils.Addr(true),
 				SensorOperations: ringConfig{
 					RingAssignment:       "ea",
-					PinnedContentVersion: utils.Addr("2025.07.22.1028"),
+					PinnedContentVersion: utils.Addr("data.crowdstrike_content_category_versions.available.sensor_operations[0]"),
 				},
 				SystemCritical: ringConfig{
 					RingAssignment:       "ga",
 					DelayHours:           utils.Addr(24),
-					PinnedContentVersion: utils.Addr("2025.07.22.104"),
+					PinnedContentVersion: utils.Addr("data.crowdstrike_content_category_versions.available.system_critical[0]"),
 				},
 				VulnerabilityManagement: ringConfig{
 					RingAssignment:       "ga",
 					DelayHours:           utils.Addr(12),
-					PinnedContentVersion: utils.Addr("2025.07.29.070"),
+					PinnedContentVersion: utils.Addr("data.crowdstrike_content_category_versions.available.vulnerability_management[0]"),
 				},
 				RapidResponse: ringConfig{
 					RingAssignment:       "ga",
-					PinnedContentVersion: utils.Addr("2025.07.30.0531"),
+					PinnedContentVersion: utils.Addr("data.crowdstrike_content_category_versions.available.rapid_response[0]"),
 				},
 			},
 		},
@@ -390,20 +402,20 @@ func TestAccContentUpdatePolicyResource_PinnedContentVersions(t *testing.T) {
 				SensorOperations: ringConfig{
 					RingAssignment:       "ga",
 					DelayHours:           utils.Addr(48),
-					PinnedContentVersion: utils.Addr("2025.07.22.1028"),
+					PinnedContentVersion: utils.Addr("data.crowdstrike_content_category_versions.available.sensor_operations[0]"),
 				},
 				SystemCritical: ringConfig{
 					RingAssignment:       "ea",
-					PinnedContentVersion: utils.Addr("2025.07.22.104"),
+					PinnedContentVersion: utils.Addr("data.crowdstrike_content_category_versions.available.system_critical[0]"),
 				},
 				VulnerabilityManagement: ringConfig{
 					RingAssignment:       "pause",
-					PinnedContentVersion: utils.Addr("2025.07.29.070"),
+					PinnedContentVersion: utils.Addr("data.crowdstrike_content_category_versions.available.vulnerability_management[0]"),
 				},
 				RapidResponse: ringConfig{
 					RingAssignment:       "ga",
 					DelayHours:           utils.Addr(0),
-					PinnedContentVersion: utils.Addr("2025.07.30.0531"),
+					PinnedContentVersion: utils.Addr("data.crowdstrike_content_category_versions.available.rapid_response[0]"),
 				},
 			},
 		},
@@ -416,16 +428,15 @@ func TestAccContentUpdatePolicyResource_PinnedContentVersions(t *testing.T) {
 				SensorOperations: ringConfig{
 					RingAssignment:       "ga",
 					DelayHours:           utils.Addr(24),
-					PinnedContentVersion: utils.Addr("2025.05.01.1234"),
+					PinnedContentVersion: utils.Addr("length(data.crowdstrike_content_category_versions.available.sensor_operations) > 1 ? data.crowdstrike_content_category_versions.available.sensor_operations[1] : data.crowdstrike_content_category_versions.available.sensor_operations[0]"),
 				},
 				SystemCritical: ringConfig{
 					RingAssignment: "ga",
 					DelayHours:     utils.Addr(12),
-					// No pinned version - should be removed if it was previously set
 				},
 				VulnerabilityManagement: ringConfig{
 					RingAssignment:       "ea",
-					PinnedContentVersion: utils.Addr("2025.04.15.0999"),
+					PinnedContentVersion: utils.Addr("length(data.crowdstrike_content_category_versions.available.vulnerability_management) > 1 ? data.crowdstrike_content_category_versions.available.vulnerability_management[1] : data.crowdstrike_content_category_versions.available.vulnerability_management[0]"),
 				},
 				RapidResponse: ringConfig{
 					RingAssignment: "pause",
@@ -447,15 +458,14 @@ func TestAccContentUpdatePolicyResource_PinnedContentVersions(t *testing.T) {
 				SystemCritical: ringConfig{
 					RingAssignment:       "ga",
 					DelayHours:           utils.Addr(8),
-					PinnedContentVersion: utils.Addr("2025.03.01.0777"),
+					PinnedContentVersion: utils.Addr("data.crowdstrike_content_category_versions.available.system_critical[0]"),
 				},
 				VulnerabilityManagement: ringConfig{
 					RingAssignment: "pause",
-					// No pinned version
 				},
 				RapidResponse: ringConfig{
 					RingAssignment:       "ea",
-					PinnedContentVersion: utils.Addr("2025.02.28.0888"),
+					PinnedContentVersion: utils.Addr("data.crowdstrike_content_category_versions.available.rapid_response[0]"),
 				},
 			},
 		},

@@ -3,13 +3,12 @@ package contentupdatepolicy_test
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/acctest"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/utils"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 )
 
 const defaultPolicyResourceName = "crowdstrike_default_content_update_policy.test"
@@ -25,7 +24,15 @@ type defaultPolicyConfig struct {
 
 // String implements the Stringer interface and generates Terraform configuration from defaultPolicyConfig.
 func (config *defaultPolicyConfig) String() string {
-	return fmt.Sprintf(`
+	var dataSourceConfig string
+	if config.needsDataSource() {
+		dataSourceConfig = `
+data "crowdstrike_content_category_versions" "available" {}
+`
+	}
+
+	return fmt.Sprintf(
+		`%s
 resource "crowdstrike_default_content_update_policy" "test" {
   description = %q
 
@@ -50,26 +57,67 @@ resource "crowdstrike_default_content_update_policy" "test" {
   }
 }
 `,
+		dataSourceConfig,
 		config.Description,
-		config.SensorOperations.RingAssignment, config.SensorOperations.formatDelayHours(),
-		config.SystemCritical.RingAssignment, config.SystemCritical.formatDelayHours(),
-		config.VulnerabilityManagement.RingAssignment, config.VulnerabilityManagement.formatDelayHours(),
-		config.RapidResponse.RingAssignment, config.RapidResponse.formatDelayHours())
+		config.SensorOperations.RingAssignment,
+		formatDelayHoursForDefault(config.SensorOperations),
+		config.SystemCritical.RingAssignment,
+		formatDelayHoursForDefault(config.SystemCritical),
+		config.VulnerabilityManagement.RingAssignment,
+		formatDelayHoursForDefault(config.VulnerabilityManagement),
+		config.RapidResponse.RingAssignment,
+		formatDelayHoursForDefault(config.RapidResponse),
+	)
+}
+
+// needsDataSource checks if any of the ring configurations use pinned content versions.
+func (config defaultPolicyConfig) needsDataSource() bool {
+	return config.SensorOperations.PinnedContentVersion != nil ||
+		config.SystemCritical.PinnedContentVersion != nil ||
+		config.VulnerabilityManagement.PinnedContentVersion != nil ||
+		config.RapidResponse.PinnedContentVersion != nil
+}
+
+// formatDelayHoursForDefault formats delay hours and pinned content version for default policy configuration.
+func formatDelayHoursForDefault(config ringConfig) string {
+	var parts []string
+
+	if config.DelayHours != nil {
+		parts = append(parts, fmt.Sprintf("delay_hours     = %d", *config.DelayHours))
+	}
+
+	if config.PinnedContentVersion != nil {
+		parts = append(
+			parts,
+			fmt.Sprintf("pinned_content_version = %s", *config.PinnedContentVersion),
+		)
+	}
+
+	return strings.Join(parts, "\n    ")
 }
 
 // TestChecks generates all appropriate test checks based on the default policy configuration.
 func (config *defaultPolicyConfig) TestChecks() resource.TestCheckFunc {
 	var checks []resource.TestCheckFunc
 
-	checks = append(checks,
+	checks = append(
+		checks,
 		resource.TestCheckResourceAttrSet(defaultPolicyResourceName, "id"),
 		resource.TestCheckResourceAttrSet(defaultPolicyResourceName, "last_updated"),
-		resource.TestCheckResourceAttr(defaultPolicyResourceName, "description", config.Description),
+		resource.TestCheckResourceAttr(
+			defaultPolicyResourceName,
+			"description",
+			config.Description,
+		),
 	)
 
-	checks = append(checks, config.SensorOperations.generateDefaultPolicyChecks("sensor_operations")...)
+	checks = append(
+		checks,
+		config.SensorOperations.generateDefaultPolicyChecks("sensor_operations")...)
 	checks = append(checks, config.SystemCritical.generateDefaultPolicyChecks("system_critical")...)
-	checks = append(checks, config.VulnerabilityManagement.generateDefaultPolicyChecks("vulnerability_management")...)
+	checks = append(
+		checks,
+		config.VulnerabilityManagement.generateDefaultPolicyChecks("vulnerability_management")...)
 	checks = append(checks, config.RapidResponse.generateDefaultPolicyChecks("rapid_response")...)
 
 	return resource.ComposeAggregateTestCheckFunc(checks...)
@@ -79,16 +127,47 @@ func (config *defaultPolicyConfig) TestChecks() resource.TestCheckFunc {
 func (ring ringConfig) generateDefaultPolicyChecks(category string) []resource.TestCheckFunc {
 	var checks []resource.TestCheckFunc
 
-	checks = append(checks, resource.TestCheckResourceAttr(defaultPolicyResourceName, category+".ring_assignment", ring.RingAssignment))
+	checks = append(
+		checks,
+		resource.TestCheckResourceAttr(
+			defaultPolicyResourceName,
+			category+".ring_assignment",
+			ring.RingAssignment,
+		),
+	)
 
 	if ring.RingAssignment != "ga" {
-		checks = append(checks, resource.TestCheckNoResourceAttr(defaultPolicyResourceName, category+".delay_hours"))
+		checks = append(
+			checks,
+			resource.TestCheckNoResourceAttr(defaultPolicyResourceName, category+".delay_hours"),
+		)
 	} else {
 		if ring.DelayHours != nil {
 			checks = append(checks, resource.TestCheckResourceAttr(defaultPolicyResourceName, category+".delay_hours", fmt.Sprintf("%d", *ring.DelayHours)))
 		} else {
 			checks = append(checks, resource.TestCheckResourceAttr(defaultPolicyResourceName, category+".delay_hours", "0"))
 		}
+	}
+
+	// Check pinned content version
+	if ring.PinnedContentVersion != nil {
+		// For data source references, just check that the attribute is set with a non-empty value
+		if strings.Contains(
+			*ring.PinnedContentVersion,
+			"data.crowdstrike_content_category_versions",
+		) {
+			checks = append(
+				checks,
+				resource.TestCheckResourceAttrSet(
+					defaultPolicyResourceName,
+					category+".pinned_content_version",
+				),
+			)
+		} else {
+			checks = append(checks, resource.TestCheckResourceAttr(defaultPolicyResourceName, category+".pinned_content_version", *ring.PinnedContentVersion))
+		}
+	} else {
+		checks = append(checks, resource.TestCheckNoResourceAttr(defaultPolicyResourceName, category+".pinned_content_version"))
 	}
 
 	return checks
@@ -145,9 +224,6 @@ func TestAccDefaultContentUpdatePolicyResource_Basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			tfversion.SkipBelow(version.Must(version.NewVersion("1.12.0"))),
-		},
 		Steps: func() []resource.TestStep {
 			var steps []resource.TestStep
 			for _, tc := range testCases {
@@ -223,9 +299,6 @@ func TestAccDefaultContentUpdatePolicyResource_AllGA(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			tfversion.SkipBelow(version.Must(version.NewVersion("1.12.0"))),
-		},
 		Steps: func() []resource.TestStep {
 			var steps []resource.TestStep
 			for _, tc := range testCases {
@@ -238,6 +311,117 @@ func TestAccDefaultContentUpdatePolicyResource_AllGA(t *testing.T) {
 		}(),
 	})
 }
+
+func TestAccDefaultContentUpdatePolicyResource_PinnedContentVersions(t *testing.T) {
+	testCases := []struct {
+		name   string
+		config defaultPolicyConfig
+	}{
+		{
+			name: "some_categories_pinned",
+			config: defaultPolicyConfig{
+				Description: "Default content update policy with some pinned content versions",
+				SensorOperations: ringConfig{
+					RingAssignment: "ea",
+					PinnedContentVersion: utils.Addr(
+						"data.crowdstrike_content_category_versions.available.sensor_operations[0]",
+					),
+				},
+				SystemCritical: ringConfig{
+					RingAssignment: "ga",
+					DelayHours:     utils.Addr(24),
+					// No pinned version
+				},
+				VulnerabilityManagement: ringConfig{
+					RingAssignment: "ga",
+					DelayHours:     utils.Addr(12),
+					PinnedContentVersion: utils.Addr(
+						"data.crowdstrike_content_category_versions.available.vulnerability_management[0]",
+					),
+				},
+				RapidResponse: ringConfig{
+					RingAssignment: "pause",
+					// No pinned version
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				PreCheck:                 func() { acctest.PreCheck(t) },
+				ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
+				Steps: []resource.TestStep{
+					{
+						Config: acctest.ProviderConfig + tc.config.String(),
+						Check:  tc.config.TestChecks(),
+					},
+					// Test import with pinned versions
+					{
+						ResourceName:      defaultPolicyResourceName,
+						ImportState:       true,
+						ImportStateVerify: true,
+						ImportStateVerifyIgnore: []string{
+							"last_updated",
+						},
+					},
+				},
+			})
+		})
+	}
+}
+
+// TestAccDefaultContentUpdatePolicyResource_AllCategoriesPinned is commented out because
+// the default content update policy is a singleton resource (one per tenant), and this test
+// would conflict with other tests that leave pinned content versions configured.
+// The API doesn't allow modifying ring assignments when pinned versions exist.
+// Coverage for pinned content versions is already provided by TestAccDefaultContentUpdatePolicyResource_PinnedContentVersions.
+/*
+func TestAccDefaultContentUpdatePolicyResource_AllCategoriesPinned(t *testing.T) {
+	config := defaultPolicyConfig{
+		Description: "Default content update policy with all categories pinned",
+		SensorOperations: ringConfig{
+			RingAssignment:       "ga",
+			DelayHours:           utils.Addr(0),
+			PinnedContentVersion: utils.Addr("data.crowdstrike_content_category_versions.available.sensor_operations[0]"),
+		},
+		SystemCritical: ringConfig{
+			RingAssignment:       "ea",
+			PinnedContentVersion: utils.Addr("data.crowdstrike_content_category_versions.available.system_critical[0]"),
+		},
+		VulnerabilityManagement: ringConfig{
+			RingAssignment:       "ga",
+			DelayHours:           utils.Addr(48),
+			PinnedContentVersion: utils.Addr("data.crowdstrike_content_category_versions.available.vulnerability_management[0]"),
+		},
+		RapidResponse: ringConfig{
+			RingAssignment:       "ga",
+			DelayHours:           utils.Addr(0),
+			PinnedContentVersion: utils.Addr("data.crowdstrike_content_category_versions.available.rapid_response[0]"),
+		},
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: acctest.ProviderConfig + config.String(),
+				Check:  config.TestChecks(),
+			},
+			{
+				ResourceName:      defaultPolicyResourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"last_updated",
+				},
+			},
+		},
+	})
+}
+*/
 
 func TestAccDefaultContentUpdatePolicyResource_AllEA(t *testing.T) {
 	testCases := []struct {
@@ -267,9 +451,6 @@ func TestAccDefaultContentUpdatePolicyResource_AllEA(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			tfversion.SkipBelow(version.Must(version.NewVersion("1.12.0"))),
-		},
 		Steps: func() []resource.TestStep {
 			var steps []resource.TestStep
 			for _, tc := range testCases {
@@ -298,7 +479,10 @@ func TestAccDefaultContentUpdatePolicyResource_DelayHoursBoundaries(t *testing.T
 		}{
 			name: fmt.Sprintf("delay_hours_%d", delay),
 			config: defaultPolicyConfig{
-				Description: fmt.Sprintf("Default content update policy testing delay hours boundary value: %d", delay),
+				Description: fmt.Sprintf(
+					"Default content update policy testing delay hours boundary value: %d",
+					delay,
+				),
 				SensorOperations: ringConfig{
 					RingAssignment: "ga",
 					DelayHours:     utils.Addr(delay),
@@ -322,9 +506,6 @@ func TestAccDefaultContentUpdatePolicyResource_DelayHoursBoundaries(t *testing.T
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			tfversion.SkipBelow(version.Must(version.NewVersion("1.12.0"))),
-		},
 		Steps: func() []resource.TestStep {
 			var steps []resource.TestStep
 			for _, tc := range testCases {
@@ -363,7 +544,9 @@ func TestAccDefaultContentUpdatePolicyResource_Validation(t *testing.T) {
 					RingAssignment: "pause",
 				},
 			},
-			expectError: regexp.MustCompile("delay_hours can only be set when ring_assignment is 'ga'"),
+			expectError: regexp.MustCompile(
+				"delay_hours can only be set when ring_assignment is 'ga'",
+			),
 		},
 		{
 			name: "invalid_delay_with_pause_ring_vulnerability_management",
@@ -385,7 +568,9 @@ func TestAccDefaultContentUpdatePolicyResource_Validation(t *testing.T) {
 					RingAssignment: "pause",
 				},
 			},
-			expectError: regexp.MustCompile("delay_hours can only be set when ring_assignment is 'ga'"),
+			expectError: regexp.MustCompile(
+				"delay_hours can only be set when ring_assignment is 'ga'",
+			),
 		},
 		{
 			name: "system_critical_cannot_use_pause",
@@ -405,7 +590,9 @@ func TestAccDefaultContentUpdatePolicyResource_Validation(t *testing.T) {
 					RingAssignment: "pause",
 				},
 			},
-			expectError: regexp.MustCompile(`(?s).*Attribute system_critical.ring_assignment value must be one of.*"pause"`),
+			expectError: regexp.MustCompile(
+				`(?s).*Attribute system_critical.ring_assignment value must be one of.*"pause"`,
+			),
 		},
 		{
 			name: "invalid_delay_hours_too_high",
@@ -426,7 +613,9 @@ func TestAccDefaultContentUpdatePolicyResource_Validation(t *testing.T) {
 					RingAssignment: "pause",
 				},
 			},
-			expectError: regexp.MustCompile("Attribute sensor_operations.delay_hours value must be one of"),
+			expectError: regexp.MustCompile(
+				"Attribute sensor_operations.delay_hours value must be one of",
+			),
 		},
 		{
 			name: "invalid_ring_assignment",
@@ -446,7 +635,9 @@ func TestAccDefaultContentUpdatePolicyResource_Validation(t *testing.T) {
 					RingAssignment: "pause",
 				},
 			},
-			expectError: regexp.MustCompile("Attribute sensor_operations.ring_assignment value must be one of"),
+			expectError: regexp.MustCompile(
+				"Attribute sensor_operations.ring_assignment value must be one of",
+			),
 		},
 		{
 			name: "empty_description",
@@ -467,7 +658,9 @@ func TestAccDefaultContentUpdatePolicyResource_Validation(t *testing.T) {
 					RingAssignment: "pause",
 				},
 			},
-			expectError: regexp.MustCompile("Attribute description string length must be at least 1"),
+			expectError: regexp.MustCompile(
+				"Attribute description string length must be at least 1",
+			),
 		},
 	}
 
@@ -476,9 +669,6 @@ func TestAccDefaultContentUpdatePolicyResource_Validation(t *testing.T) {
 			resource.Test(t, resource.TestCase{
 				PreCheck:                 func() { acctest.PreCheck(t) },
 				ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
-				TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-					tfversion.SkipBelow(version.Must(version.NewVersion("1.12.0"))),
-				},
 				Steps: []resource.TestStep{
 					{
 						Config:      acctest.ProviderConfig + tc.config.String(),
@@ -558,9 +748,6 @@ func TestAccDefaultContentUpdatePolicyResource_RingTransitions(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
-		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
-			tfversion.SkipBelow(version.Must(version.NewVersion("1.12.0"))),
-		},
 		Steps: func() []resource.TestStep {
 			var steps []resource.TestStep
 			for _, tc := range testCases {

@@ -174,6 +174,10 @@ func (r *defaultContentUpdatePolicyResource) Schema(
 						Description: "Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.",
 						Validators:  delayHoursValidators(),
 					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin content category to a specific version. When set, the content category will not automatically update to newer versions.",
+					},
 				},
 			},
 			"system_critical": schema.SingleNestedAttribute{
@@ -189,6 +193,10 @@ func (r *defaultContentUpdatePolicyResource) Schema(
 						Optional:    true,
 						Description: "Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.",
 						Validators:  delayHoursValidators(),
+					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin content category to a specific version. When set, the content category will not automatically update to newer versions.",
 					},
 				},
 			},
@@ -206,6 +214,10 @@ func (r *defaultContentUpdatePolicyResource) Schema(
 						Description: "Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.",
 						Validators:  delayHoursValidators(),
 					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin content category to a specific version. When set, the content category will not automatically update to newer versions.",
+					},
 				},
 			},
 			"rapid_response": schema.SingleNestedAttribute{
@@ -221,6 +233,10 @@ func (r *defaultContentUpdatePolicyResource) Schema(
 						Optional:    true,
 						Description: "Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.",
 						Validators:  delayHoursValidators(),
+					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin content category to a specific version. When set, the content category will not automatically update to newer versions.",
 					},
 				},
 			},
@@ -264,6 +280,69 @@ func (r *defaultContentUpdatePolicyResource) Create(
 	// Update the policy with the planned configuration
 	tflog.Debug(ctx, "Updating default content update policy with planned configuration")
 	policy, diags = r.updateDefaultPolicy(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Handle pinned content versions - since this is configuring the default policy,
+	// we need to check current vs planned settings
+	currentPolicy, diags := getContentUpdatePolicy(ctx, r.client, plan.ID.ValueString())
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Extract current settings to compare with planned
+	currentSettings, diags := extractRingAssignments(
+		ctx,
+		types.ObjectNull(ringAssignmentModel{}.AttributeTypes()), // Start with null since we're reading from API
+		types.ObjectNull(ringAssignmentModel{}.AttributeTypes()),
+		types.ObjectNull(ringAssignmentModel{}.AttributeTypes()),
+		types.ObjectNull(ringAssignmentModel{}.AttributeTypes()),
+	)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Populate current settings from the policy we retrieved
+	if currentPolicy.Settings != nil && currentPolicy.Settings.RingAssignmentSettings != nil {
+		for _, setting := range currentPolicy.Settings.RingAssignmentSettings {
+			ringModel := &ringAssignmentModel{
+				RingAssignment: types.StringValue(*setting.RingAssignment),
+			}
+
+			if setting.PinnedContentVersion != nil && *setting.PinnedContentVersion != "" {
+				ringModel.PinnedContentVersion = types.StringValue(*setting.PinnedContentVersion)
+			} else {
+				ringModel.PinnedContentVersion = types.StringNull()
+			}
+
+			switch *setting.ID {
+			case "sensor_operations":
+				currentSettings.sensorOperations = ringModel
+			case "system_critical":
+				currentSettings.systemCritical = ringModel
+			case "vulnerability_management":
+				currentSettings.vulnerabilityManagement = ringModel
+			case "rapid_response_al_bl_listing":
+				currentSettings.rapidResponse = ringModel
+			}
+		}
+	}
+
+	err := managePinnedContentVersions(ctx, r.client, plan.ID.ValueString(), currentSettings, plan.settings)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error setting pinned content versions",
+			"Could not set pinned content versions, unexpected error: "+err.Error(),
+		)
+		return
+	}
+
+	// Re-read the policy to get the final state with pinned versions
+	policy, diags = getContentUpdatePolicy(ctx, r.client, plan.ID.ValueString())
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -338,6 +417,13 @@ func (r *defaultContentUpdatePolicyResource) Update(
 		return
 	}
 
+	var state defaultContentUpdatePolicyResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(state.extract(ctx)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	tflog.Debug(
 		ctx,
 		"Starting default content update policy update operation",
@@ -347,6 +433,23 @@ func (r *defaultContentUpdatePolicyResource) Update(
 	)
 
 	policy, diags := r.updateDefaultPolicy(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Handle pinned content versions
+	err := managePinnedContentVersions(ctx, r.client, plan.ID.ValueString(), state.settings, plan.settings)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error updating pinned content versions",
+			"Could not update pinned content versions, unexpected error: "+err.Error(),
+		)
+		return
+	}
+
+	// Re-read the policy to get the final state with pinned versions
+	policy, diags = getContentUpdatePolicy(ctx, r.client, plan.ID.ValueString())
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
