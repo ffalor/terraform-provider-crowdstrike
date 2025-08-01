@@ -188,6 +188,13 @@ func populateRingAssignments(
 				ringAssignment.DelayHours = types.Int64Null()
 			}
 
+			// Handle pinned content version
+			if setting.PinnedContentVersion != nil && *setting.PinnedContentVersion != "" {
+				ringAssignment.PinnedContentVersion = types.StringValue(*setting.PinnedContentVersion)
+			} else {
+				ringAssignment.PinnedContentVersion = types.StringNull()
+			}
+
 			objValue, diag := types.ObjectValueFrom(ctx, ringAssignment.AttributeTypes(), ringAssignment)
 			diags.Append(diag...)
 			if diags.HasError() {
@@ -267,4 +274,150 @@ func updatePolicyEnabledState(
 	)
 
 	return err
+}
+
+// setPinnedContentVersion sets a pinned content version for a specific category in a policy.
+func setPinnedContentVersion(
+	ctx context.Context,
+	client *client.CrowdStrikeAPISpecification,
+	policyID string,
+	categoryName string,
+	version string,
+) error {
+	actionParams := []*models.MsaspecActionParameter{
+		{
+			Name:  &categoryName,
+			Value: &version,
+		},
+	}
+
+	_, err := client.ContentUpdatePolicies.PerformContentUpdatePoliciesAction(
+		&content_update_policies.PerformContentUpdatePoliciesActionParams{
+			Context:    ctx,
+			ActionName: "set-pinned-content-version",
+			Body: &models.MsaEntityActionRequestV2{
+				ActionParameters: actionParams,
+				Ids:              []string{policyID},
+			},
+		},
+	)
+
+	return err
+}
+
+// removePinnedContentVersion removes a pinned content version for a specific category in a policy.
+func removePinnedContentVersion(
+	ctx context.Context,
+	client *client.CrowdStrikeAPISpecification,
+	policyID string,
+	categoryName string,
+) error {
+	actionParams := []*models.MsaspecActionParameter{
+		{
+			Name:  &categoryName,
+			Value: &categoryName, // According to API docs, pass the category name as the value
+		},
+	}
+
+	_, err := client.ContentUpdatePolicies.PerformContentUpdatePoliciesAction(
+		&content_update_policies.PerformContentUpdatePoliciesActionParams{
+			Context:    ctx,
+			ActionName: "remove-pinned-content-version",
+			Body: &models.MsaEntityActionRequestV2{
+				ActionParameters: actionParams,
+				Ids:              []string{policyID},
+			},
+		},
+	)
+
+	return err
+}
+
+// managePinnedContentVersions handles setting/removing pinned content versions for all categories.
+func managePinnedContentVersions(
+	ctx context.Context,
+	client *client.CrowdStrikeAPISpecification,
+	policyID string,
+	oldSettings *contentUpdatePolicySettings,
+	newSettings *contentUpdatePolicySettings,
+) error {
+	categoryMap := map[string]struct {
+		oldSetting *ringAssignmentModel
+		newSetting *ringAssignmentModel
+		apiName    string
+	}{
+		"sensor_operations": {
+			oldSetting: getSettingOrNil(oldSettings, "sensor_operations"),
+			newSetting: getSettingOrNil(newSettings, "sensor_operations"),
+			apiName:    "sensor_operations",
+		},
+		"system_critical": {
+			oldSetting: getSettingOrNil(oldSettings, "system_critical"),
+			newSetting: getSettingOrNil(newSettings, "system_critical"),
+			apiName:    "system_critical",
+		},
+		"vulnerability_management": {
+			oldSetting: getSettingOrNil(oldSettings, "vulnerability_management"),
+			newSetting: getSettingOrNil(newSettings, "vulnerability_management"),
+			apiName:    "vulnerability_management",
+		},
+		"rapid_response": {
+			oldSetting: getSettingOrNil(oldSettings, "rapid_response"),
+			newSetting: getSettingOrNil(newSettings, "rapid_response"),
+			apiName:    "rapid_response_al_bl_listing",
+		},
+	}
+
+	for category, config := range categoryMap {
+		var oldVersion, newVersion string
+		
+		if config.oldSetting != nil && !config.oldSetting.PinnedContentVersion.IsNull() {
+			oldVersion = config.oldSetting.PinnedContentVersion.ValueString()
+		}
+		
+		if config.newSetting != nil && !config.newSetting.PinnedContentVersion.IsNull() {
+			newVersion = config.newSetting.PinnedContentVersion.ValueString()
+		}
+
+		// If versions are the same, no action needed
+		if oldVersion == newVersion {
+			continue
+		}
+
+		// If new version is empty but old version exists, remove pinning
+		if newVersion == "" && oldVersion != "" {
+			if err := removePinnedContentVersion(ctx, client, policyID, config.apiName); err != nil {
+				return fmt.Errorf("failed to remove pinned content version for %s: %w", category, err)
+			}
+		}
+
+		// If new version is specified, set pinning
+		if newVersion != "" {
+			if err := setPinnedContentVersion(ctx, client, policyID, config.apiName, newVersion); err != nil {
+				return fmt.Errorf("failed to set pinned content version for %s: %w", category, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// getSettingOrNil is a helper function to safely get settings from contentUpdatePolicySettings.
+func getSettingOrNil(settings *contentUpdatePolicySettings, category string) *ringAssignmentModel {
+	if settings == nil {
+		return nil
+	}
+	
+	switch category {
+	case "sensor_operations":
+		return settings.sensorOperations
+	case "system_critical":
+		return settings.systemCritical
+	case "vulnerability_management":
+		return settings.vulnerabilityManagement
+	case "rapid_response":
+		return settings.rapidResponse
+	default:
+		return nil
+	}
 }

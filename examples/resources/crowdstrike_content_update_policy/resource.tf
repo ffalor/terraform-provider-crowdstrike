@@ -141,3 +141,65 @@ resource "crowdstrike_content_update_policy" "early_access" {
     crowdstrike_host_group.test.id
   ]
 }
+
+# Content update policy with pinned content versions
+resource "crowdstrike_content_update_policy" "pinned_policy" {
+  name        = "Production Policy with Pinning"
+  description = "Policy with specific content versions pinned for stability"
+  enabled     = true
+
+  sensor_operations = {
+    ring_assignment         = "ea"
+    pinned_content_version = "2025.04.02.1000"
+  }
+
+  system_critical = {
+    ring_assignment = "ga"
+    delay_hours     = 24
+    # No pinning - will use latest available version
+  }
+
+  vulnerability_management = {
+    ring_assignment         = "ga"
+    delay_hours            = 12
+    pinned_content_version = "2025.03.21.0898"
+  }
+
+  rapid_response = {
+    ring_assignment         = "ga"
+    pinned_content_version = "2025.02.12.0843"
+  }
+}
+
+# Mixed configuration example with some categories pinned
+resource "crowdstrike_content_update_policy" "mixed_pinning" {
+  name        = "Mixed Pinning Policy"
+  description = "Policy demonstrating mixed pinning and auto-update approach"
+  enabled     = true
+
+  sensor_operations = {
+    ring_assignment         = "ga"
+    delay_hours            = 48
+    pinned_content_version = "2025.01.07.1054"
+  }
+
+  system_critical = {
+    ring_assignment = "ea"
+    # No pinning - auto-update to latest EA version
+  }
+
+  vulnerability_management = {
+    ring_assignment = "pause"
+    # Paused, no automatic updates
+  }
+
+  rapid_response = {
+    ring_assignment         = "ga"
+    delay_hours            = 0
+    pinned_content_version = "2025.02.07.0024"
+  }
+
+  host_groups = [
+    crowdstrike_host_group.production.id
+  ]
+}

@@ -67,15 +67,17 @@ type contentPolicyResourceModel struct {
 
 // ringAssignmentModel represents a content category ring assignment.
 type ringAssignmentModel struct {
-	RingAssignment types.String `tfsdk:"ring_assignment"`
-	DelayHours     types.Int64  `tfsdk:"delay_hours"`
+	RingAssignment        types.String `tfsdk:"ring_assignment"`
+	DelayHours           types.Int64  `tfsdk:"delay_hours"`
+	PinnedContentVersion types.String `tfsdk:"pinned_content_version"`
 }
 
 // AttributeTypes returns the attribute types for the ring assignment model.
 func (r ringAssignmentModel) AttributeTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"ring_assignment": types.StringType,
-		"delay_hours":     types.Int64Type,
+		"ring_assignment":         types.StringType,
+		"delay_hours":            types.Int64Type,
+		"pinned_content_version": types.StringType,
 	}
 }
 
@@ -298,6 +300,10 @@ func (r *contentPolicyResource) Schema(
 						Description: "Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.",
 						Validators:  delayHoursValidators(),
 					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin content category to a specific version. When set, the content category will not automatically update to newer versions.",
+					},
 				},
 			},
 			"system_critical": schema.SingleNestedAttribute{
@@ -313,6 +319,10 @@ func (r *contentPolicyResource) Schema(
 						Optional:    true,
 						Description: "Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.",
 						Validators:  delayHoursValidators(),
+					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin content category to a specific version. When set, the content category will not automatically update to newer versions.",
 					},
 				},
 			},
@@ -330,6 +340,10 @@ func (r *contentPolicyResource) Schema(
 						Description: "Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.",
 						Validators:  delayHoursValidators(),
 					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin content category to a specific version. When set, the content category will not automatically update to newer versions.",
+					},
 				},
 			},
 			"rapid_response": schema.SingleNestedAttribute{
@@ -345,6 +359,10 @@ func (r *contentPolicyResource) Schema(
 						Optional:    true,
 						Description: "Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.",
 						Validators:  delayHoursValidators(),
+					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin content category to a specific version. When set, the content category will not automatically update to newer versions.",
 					},
 				},
 			},
@@ -365,67 +383,14 @@ func (r *contentPolicyResource) Create(
 		return
 	}
 
-	ringAssignmentSettings := make([]*models.ContentUpdateRingAssignmentSettingsReqV1, 0, 4)
-
-	if plan.sensorOperations != nil {
-		delayHours := int64(0)
-		if !plan.sensorOperations.DelayHours.IsNull() {
-			delayHours = plan.sensorOperations.DelayHours.ValueInt64()
-		}
-		delayHoursStr := fmt.Sprintf("%d", delayHours)
-		categoryID := "sensor_operations"
-		setting := &models.ContentUpdateRingAssignmentSettingsReqV1{
-			ID:             &categoryID,
-			RingAssignment: plan.sensorOperations.RingAssignment.ValueStringPointer(),
-			DelayHours:     &delayHoursStr,
-		}
-		ringAssignmentSettings = append(ringAssignmentSettings, setting)
+	// Extract ring assignment settings using shared function
+	planSettings := &contentUpdatePolicySettings{
+		sensorOperations:        plan.sensorOperations,
+		systemCritical:          plan.systemCritical,
+		vulnerabilityManagement: plan.vulnerabilityManagement,
+		rapidResponse:           plan.rapidResponse,
 	}
-
-	if plan.systemCritical != nil {
-		delayHours := int64(0)
-		if !plan.systemCritical.DelayHours.IsNull() {
-			delayHours = plan.systemCritical.DelayHours.ValueInt64()
-		}
-		delayHoursStr := fmt.Sprintf("%d", delayHours)
-		categoryID := "system_critical"
-		setting := &models.ContentUpdateRingAssignmentSettingsReqV1{
-			ID:             &categoryID,
-			RingAssignment: plan.systemCritical.RingAssignment.ValueStringPointer(),
-			DelayHours:     &delayHoursStr,
-		}
-		ringAssignmentSettings = append(ringAssignmentSettings, setting)
-	}
-
-	if plan.vulnerabilityManagement != nil {
-		delayHours := int64(0)
-		if !plan.vulnerabilityManagement.DelayHours.IsNull() {
-			delayHours = plan.vulnerabilityManagement.DelayHours.ValueInt64()
-		}
-		delayHoursStr := fmt.Sprintf("%d", delayHours)
-		categoryID := "vulnerability_management"
-		setting := &models.ContentUpdateRingAssignmentSettingsReqV1{
-			ID:             &categoryID,
-			RingAssignment: plan.vulnerabilityManagement.RingAssignment.ValueStringPointer(),
-			DelayHours:     &delayHoursStr,
-		}
-		ringAssignmentSettings = append(ringAssignmentSettings, setting)
-	}
-
-	if plan.rapidResponse != nil {
-		delayHours := int64(0)
-		if !plan.rapidResponse.DelayHours.IsNull() {
-			delayHours = plan.rapidResponse.DelayHours.ValueInt64()
-		}
-		delayHoursStr := fmt.Sprintf("%d", delayHours)
-		categoryID := "rapid_response_al_bl_listing"
-		setting := &models.ContentUpdateRingAssignmentSettingsReqV1{
-			ID:             &categoryID,
-			RingAssignment: plan.rapidResponse.RingAssignment.ValueStringPointer(),
-			DelayHours:     &delayHoursStr,
-		}
-		ringAssignmentSettings = append(ringAssignmentSettings, setting)
-	}
+	ringAssignmentSettings := buildRingAssignmentSettings(planSettings)
 
 	policyParams := content_update_policies.CreateContentUpdatePoliciesParams{
 		Context: ctx,
@@ -487,6 +452,16 @@ func (r *contentPolicyResource) Create(
 			)
 			return
 		}
+	}
+
+	// Handle pinned content versions (create is like updating from empty state)
+	err = managePinnedContentVersions(ctx, r.client, plan.ID.ValueString(), nil, planSettings)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error setting pinned content versions",
+			"Could not set pinned content versions for policy, unexpected error: "+err.Error(),
+		)
+		return
 	}
 
 	policy, diags := getContentUpdatePolicy(ctx, r.client, plan.ID.ValueString())
@@ -603,67 +578,20 @@ func (r *contentPolicyResource) Update(
 		}
 	}
 
-	ringAssignmentSettings := make([]*models.ContentUpdateRingAssignmentSettingsReqV1, 0, 4)
-
-	if plan.sensorOperations != nil {
-		delayHours := int64(0)
-		if !plan.sensorOperations.DelayHours.IsNull() {
-			delayHours = plan.sensorOperations.DelayHours.ValueInt64()
-		}
-		delayHoursStr := fmt.Sprintf("%d", delayHours)
-		categoryID := "sensor_operations"
-		setting := &models.ContentUpdateRingAssignmentSettingsReqV1{
-			ID:             &categoryID,
-			RingAssignment: plan.sensorOperations.RingAssignment.ValueStringPointer(),
-			DelayHours:     &delayHoursStr,
-		}
-		ringAssignmentSettings = append(ringAssignmentSettings, setting)
+	// Extract ring assignment settings using shared function
+	planSettings := &contentUpdatePolicySettings{
+		sensorOperations:        plan.sensorOperations,
+		systemCritical:          plan.systemCritical,
+		vulnerabilityManagement: plan.vulnerabilityManagement,
+		rapidResponse:           plan.rapidResponse,
 	}
-
-	if plan.systemCritical != nil {
-		delayHours := int64(0)
-		if !plan.systemCritical.DelayHours.IsNull() {
-			delayHours = plan.systemCritical.DelayHours.ValueInt64()
-		}
-		delayHoursStr := fmt.Sprintf("%d", delayHours)
-		categoryID := "system_critical"
-		setting := &models.ContentUpdateRingAssignmentSettingsReqV1{
-			ID:             &categoryID,
-			RingAssignment: plan.systemCritical.RingAssignment.ValueStringPointer(),
-			DelayHours:     &delayHoursStr,
-		}
-		ringAssignmentSettings = append(ringAssignmentSettings, setting)
+	stateSettings := &contentUpdatePolicySettings{
+		sensorOperations:        state.sensorOperations,
+		systemCritical:          state.systemCritical,
+		vulnerabilityManagement: state.vulnerabilityManagement,
+		rapidResponse:           state.rapidResponse,
 	}
-
-	if plan.vulnerabilityManagement != nil {
-		delayHours := int64(0)
-		if !plan.vulnerabilityManagement.DelayHours.IsNull() {
-			delayHours = plan.vulnerabilityManagement.DelayHours.ValueInt64()
-		}
-		delayHoursStr := fmt.Sprintf("%d", delayHours)
-		categoryID := "vulnerability_management"
-		setting := &models.ContentUpdateRingAssignmentSettingsReqV1{
-			ID:             &categoryID,
-			RingAssignment: plan.vulnerabilityManagement.RingAssignment.ValueStringPointer(),
-			DelayHours:     &delayHoursStr,
-		}
-		ringAssignmentSettings = append(ringAssignmentSettings, setting)
-	}
-
-	if plan.rapidResponse != nil {
-		delayHours := int64(0)
-		if !plan.rapidResponse.DelayHours.IsNull() {
-			delayHours = plan.rapidResponse.DelayHours.ValueInt64()
-		}
-		delayHoursStr := fmt.Sprintf("%d", delayHours)
-		categoryID := "rapid_response_al_bl_listing"
-		setting := &models.ContentUpdateRingAssignmentSettingsReqV1{
-			ID:             &categoryID,
-			RingAssignment: plan.rapidResponse.RingAssignment.ValueStringPointer(),
-			DelayHours:     &delayHoursStr,
-		}
-		ringAssignmentSettings = append(ringAssignmentSettings, setting)
-	}
+	ringAssignmentSettings := buildRingAssignmentSettings(planSettings)
 
 	policyParams := content_update_policies.UpdateContentUpdatePoliciesParams{
 		Context: ctx,
@@ -701,6 +629,16 @@ func (r *contentPolicyResource) Update(
 			)
 			return
 		}
+	}
+
+	// Handle pinned content version changes
+	err = managePinnedContentVersions(ctx, r.client, plan.ID.ValueString(), stateSettings, planSettings)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error updating pinned content versions",
+			"Could not update pinned content versions for policy, unexpected error: "+err.Error(),
+		)
+		return
 	}
 
 	policy, diags := getContentUpdatePolicy(ctx, r.client, plan.ID.ValueString())

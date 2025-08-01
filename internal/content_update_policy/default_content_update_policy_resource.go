@@ -174,6 +174,10 @@ func (r *defaultContentUpdatePolicyResource) Schema(
 						Description: "Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.",
 						Validators:  delayHoursValidators(),
 					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin content category to a specific version. When set, the content category will not automatically update to newer versions.",
+					},
 				},
 			},
 			"system_critical": schema.SingleNestedAttribute{
@@ -189,6 +193,10 @@ func (r *defaultContentUpdatePolicyResource) Schema(
 						Optional:    true,
 						Description: "Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.",
 						Validators:  delayHoursValidators(),
+					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin content category to a specific version. When set, the content category will not automatically update to newer versions.",
 					},
 				},
 			},
@@ -206,6 +214,10 @@ func (r *defaultContentUpdatePolicyResource) Schema(
 						Description: "Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.",
 						Validators:  delayHoursValidators(),
 					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin content category to a specific version. When set, the content category will not automatically update to newer versions.",
+					},
 				},
 			},
 			"rapid_response": schema.SingleNestedAttribute{
@@ -221,6 +233,10 @@ func (r *defaultContentUpdatePolicyResource) Schema(
 						Optional:    true,
 						Description: "Delay in hours when using 'ga' ring assignment. Valid values: 0, 1, 2, 4, 8, 12, 24, 48, 72. Only applicable when ring_assignment is 'ga'.",
 						Validators:  delayHoursValidators(),
+					},
+					"pinned_content_version": schema.StringAttribute{
+						Optional:    true,
+						Description: "Pin content category to a specific version. When set, the content category will not automatically update to newer versions.",
 					},
 				},
 			},
