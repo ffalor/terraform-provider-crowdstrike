@@ -206,3 +206,30 @@ func OptionalString(value *string) types.String {
 	}
 	return types.StringNull()
 }
+
+// TerraformObjectConvertible is an interface for models that can be converted to Terraform objects
+type TerraformObjectConvertible interface {
+	AttributeTypes() map[string]attr.Type
+}
+
+// ConvertModelToTerraformObject converts a model pointer to a Terraform object.
+// If the model is nil, returns a null object with the provided attribute types.
+func ConvertModelToTerraformObject[T TerraformObjectConvertible](
+	ctx context.Context,
+	model *T,
+	target *types.Object,
+) diag.Diagnostics {
+	if model == nil {
+		var zero T
+		zeroObj := types.ObjectNull(zero.AttributeTypes())
+		target = &zeroObj
+		return nil
+	}
+
+	obj, diags := types.ObjectValueFrom(ctx, (*model).AttributeTypes(), *model)
+	if diags.HasError() {
+		return diags
+	}
+	target = &obj
+	return diags
+}

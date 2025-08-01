@@ -169,53 +169,30 @@ func (d *contentPolicyResourceModel) wrap(
 		}
 	}
 
-	// Convert the updated models back to terraform objects
-	if d.settings != nil && d.settings.sensorOperations != nil {
-		sensorOps, ringDiag := types.ObjectValueFrom(
+	if d.settings != nil {
+		diags.Append(utils.ConvertModelToTerraformObject(
 			ctx,
-			d.settings.sensorOperations.AttributeTypes(),
-			d.settings.sensorOperations,
-		)
-		diags.Append(ringDiag...)
-		d.SensorOperations = sensorOps
-	} else {
-		d.SensorOperations = types.ObjectNull(ringAssignmentModel{}.AttributeTypes())
-	}
-
-	if d.settings != nil && d.settings.systemCritical != nil {
-		systemCrit, ringDiag := types.ObjectValueFrom(
-			ctx,
-			d.settings.systemCritical.AttributeTypes(),
 			d.settings.systemCritical,
-		)
-		diags.Append(ringDiag...)
-		d.SystemCritical = systemCrit
-	} else {
-		d.SystemCritical = types.ObjectNull(ringAssignmentModel{}.AttributeTypes())
-	}
+			&d.SystemCritical,
+		)...)
 
-	if d.settings != nil && d.settings.vulnerabilityManagement != nil {
-		vulnMgmt, ringDiag := types.ObjectValueFrom(
+		diags.Append(utils.ConvertModelToTerraformObject(
 			ctx,
-			d.settings.vulnerabilityManagement.AttributeTypes(),
-			d.settings.vulnerabilityManagement,
-		)
-		diags.Append(ringDiag...)
-		d.VulnerabilityManagement = vulnMgmt
-	} else {
-		d.VulnerabilityManagement = types.ObjectNull(ringAssignmentModel{}.AttributeTypes())
-	}
+			d.settings.sensorOperations,
+			&d.SensorOperations,
+		)...)
 
-	if d.settings != nil && d.settings.rapidResponse != nil {
-		rapidResp, ringDiag := types.ObjectValueFrom(
+		diags.Append(utils.ConvertModelToTerraformObject(
 			ctx,
-			d.settings.rapidResponse.AttributeTypes(),
 			d.settings.rapidResponse,
-		)
-		diags.Append(ringDiag...)
-		d.RapidResponse = rapidResp
-	} else {
-		d.RapidResponse = types.ObjectNull(ringAssignmentModel{}.AttributeTypes())
+			&d.RapidResponse,
+		)...)
+
+		diags.Append(utils.ConvertModelToTerraformObject(
+			ctx,
+			d.settings.vulnerabilityManagement,
+			&d.VulnerabilityManagement,
+		)...)
 	}
 
 	return diags
