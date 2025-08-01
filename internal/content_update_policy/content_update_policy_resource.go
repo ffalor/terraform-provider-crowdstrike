@@ -615,6 +615,22 @@ func (r *contentPolicyResource) Update(
 		return
 	}
 
+	// Handle pinned content versions FIRST to avoid API conflicts with ring assignment changes
+	err := managePinnedContentVersions(
+		ctx,
+		r.client,
+		plan.ID.ValueString(),
+		currentSettings,
+		plannedSettings,
+	)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error updating pinned content versions",
+			"Could not update pinned content versions, unexpected error: "+err.Error(),
+		)
+		return
+	}
+
 	// Build ring assignment settings using shared function
 	ringAssignmentSettings := buildRingAssignmentSettings(plannedSettings)
 
@@ -634,7 +650,7 @@ func (r *contentPolicyResource) Update(
 		},
 	}
 
-	_, err := r.client.ContentUpdatePolicies.UpdateContentUpdatePolicies(&policyParams)
+	_, err = r.client.ContentUpdatePolicies.UpdateContentUpdatePolicies(&policyParams)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating content update policy",
@@ -646,7 +662,7 @@ func (r *contentPolicyResource) Update(
 	plan.LastUpdated = utils.GenerateUpdateTimestamp()
 
 	if plan.Enabled.ValueBool() != state.Enabled.ValueBool() {
-		err := updatePolicyEnabledState(
+		err = updatePolicyEnabledState(
 			ctx,
 			r.client,
 			plan.ID.ValueString(),
@@ -659,22 +675,6 @@ func (r *contentPolicyResource) Update(
 			)
 			return
 		}
-	}
-
-	// Handle pinned content versions
-	err = managePinnedContentVersions(
-		ctx,
-		r.client,
-		plan.ID.ValueString(),
-		currentSettings,
-		plannedSettings,
-	)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error updating pinned content versions",
-			"Could not update pinned content versions, unexpected error: "+err.Error(),
-		)
-		return
 	}
 
 	policy, diags := getContentUpdatePolicy(ctx, r.client, plan.ID.ValueString())

@@ -487,13 +487,7 @@ func (r *defaultContentUpdatePolicyResource) Update(
 		},
 	)
 
-	policy, diags := r.updateDefaultPolicy(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Handle pinned content versions
+	// Handle pinned content versions FIRST to avoid API conflicts with ring assignment changes
 	err := managePinnedContentVersions(
 		ctx,
 		r.client,
@@ -509,8 +503,7 @@ func (r *defaultContentUpdatePolicyResource) Update(
 		return
 	}
 
-	// Re-read the policy to get the final state with pinned versions
-	policy, diags = getContentUpdatePolicy(ctx, r.client, plan.ID.ValueString())
+	policy, diags := r.updateDefaultPolicy(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
