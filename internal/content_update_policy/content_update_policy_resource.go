@@ -14,7 +14,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -63,22 +62,6 @@ type contentPolicyResourceModel struct {
 	systemCritical          *ringAssignmentModel `tfsdk:"-"`
 	vulnerabilityManagement *ringAssignmentModel `tfsdk:"-"`
 	rapidResponse           *ringAssignmentModel `tfsdk:"-"`
-}
-
-// ringAssignmentModel represents a content category ring assignment.
-type ringAssignmentModel struct {
-	RingAssignment       types.String `tfsdk:"ring_assignment"`
-	DelayHours           types.Int64  `tfsdk:"delay_hours"`
-	PinnedContentVersion types.String `tfsdk:"pinned_content_version"`
-}
-
-// AttributeTypes returns the attribute types for the ring assignment model.
-func (r ringAssignmentModel) AttributeTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"ring_assignment":        types.StringType,
-		"delay_hours":            types.Int64Type,
-		"pinned_content_version": types.StringType,
-	}
 }
 
 // extract extracts the Go values from their terraform wrapped values.

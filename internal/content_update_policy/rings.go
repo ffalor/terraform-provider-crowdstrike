@@ -7,11 +7,28 @@ import (
 
 	"github.com/crowdstrike/gofalcon/falcon/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
+
+// ringAssignmentModel represents a content category ring assignment.
+type ringAssignmentModel struct {
+	RingAssignment       types.String `tfsdk:"ring_assignment"`
+	DelayHours           types.Int64  `tfsdk:"delay_hours"`
+	PinnedContentVersion types.String `tfsdk:"pinned_content_version"`
+}
+
+// AttributeTypes returns the attribute types for the ring assignment model.
+func (r ringAssignmentModel) AttributeTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"ring_assignment":        types.StringType,
+		"delay_hours":            types.Int64Type,
+		"pinned_content_version": types.StringType,
+	}
+}
 
 // Valid ring assignments.
 var validRingAssignments = []string{
@@ -32,10 +49,6 @@ func ringAssignmentValidators() map[string][]validator.String {
 		"ring_assignment": {stringvalidator.OneOf(validRingAssignments...)},
 		"system_critical": {stringvalidator.OneOf(validSystemCriticalRingAssignments...)},
 	}
-}
-
-type RingAssignmentModel interface {
-	*contentPolicyResourceModel | *defaultContentUpdatePolicyResourceModel
 }
 
 // extractRingAssignments extracts ring assignment objects from terraform objects.
