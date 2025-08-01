@@ -32,6 +32,7 @@ var (
 	_ resource.ResourceWithConfigure      = &contentPolicyResource{}
 	_ resource.ResourceWithImportState    = &contentPolicyResource{}
 	_ resource.ResourceWithValidateConfig = &contentPolicyResource{}
+	_ resource.ResourceWithModifyPlan     = &contentPolicyResource{}
 )
 
 // NewContentPolicyResource is a helper function to simplify the provider implementation.
@@ -817,6 +818,34 @@ func (r *contentPolicyResource) ValidateConfig(
 			)
 		}
 	}
+}
+
+// ModifyPlan runs during the plan phase to validate changes between current state and planned configuration.
+func (r *contentPolicyResource) ModifyPlan(
+	ctx context.Context,
+	req resource.ModifyPlanRequest,
+	resp *resource.ModifyPlanResponse,
+) {
+	if req.State.Raw.IsNull() {
+		return
+	}
+
+	var plan contentPolicyResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(plan.extract(ctx)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var state contentPolicyResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(state.extract(ctx)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(
+		validateContentUpdatePolicyModifyPlan(state.settings, plan.settings)...)
 }
 
 // updateHostGroups will remove or add a slice of host groups to a content update policy.

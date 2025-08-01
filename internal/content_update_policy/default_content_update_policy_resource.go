@@ -29,6 +29,7 @@ var (
 	_ resource.ResourceWithConfigure      = &defaultContentUpdatePolicyResource{}
 	_ resource.ResourceWithImportState    = &defaultContentUpdatePolicyResource{}
 	_ resource.ResourceWithValidateConfig = &defaultContentUpdatePolicyResource{}
+	_ resource.ResourceWithModifyPlan     = &defaultContentUpdatePolicyResource{}
 )
 
 // NewDefaultContentUpdatePolicyResource is a helper function to simplify the provider implementation.
@@ -611,6 +612,34 @@ func (r *defaultContentUpdatePolicyResource) ValidateConfig(
 			)
 		}
 	}
+}
+
+// ModifyPlan runs during the plan phase to validate changes between current state and planned configuration.
+func (r *defaultContentUpdatePolicyResource) ModifyPlan(
+	ctx context.Context,
+	req resource.ModifyPlanRequest,
+	resp *resource.ModifyPlanResponse,
+) {
+	if req.State.Raw.IsNull() {
+		return
+	}
+
+	var plan defaultContentUpdatePolicyResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(plan.extract(ctx)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var state defaultContentUpdatePolicyResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(state.extract(ctx)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(
+		validateContentUpdatePolicyModifyPlan(state.settings, plan.settings)...)
 }
 
 func (r *defaultContentUpdatePolicyResource) updateDefaultPolicy(
