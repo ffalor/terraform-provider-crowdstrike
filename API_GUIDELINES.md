@@ -183,5 +183,8 @@ Additionally, avoid operation-specific naming (e.g., "CreateResponse") when the 
 **Common Specification Issues:**
 - **Status Code Mismatches**: Spec says 200 but endpoint returns 201, causing SDK error handling to treat successful operations as failures
   - Example: `POST /policy/entities/sv-exclusions/v1` returns 201 but spec says 200
-- **Response Schema Mismatches**: Different fields between spec and actual response, resulting in SDK structs with missing or incorrect fields.
+- **Response Schema Mismatches**: Different fields between spec and actual response, resulting in SDK structs with missing or incorrect fields
 - **Field Type Mismatches**: Spec defines field as string but endpoint returns integer, causing SDK type conversion errors and runtime panics
+- **Constantly Changing Model Names**: Model names in API specifications that frequently change between releases break downstream SDK consumers
+  - Example: Changing "PolicyResponse" to "PolicyV2Response" requires all SDK users to update their code
+  - **Solution**: Establish model names early and maintain them across API versions.
