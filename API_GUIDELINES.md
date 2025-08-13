@@ -104,7 +104,13 @@ PATCH endpoints should accept partial resource representations where only modifi
 
 ## SDK Generation Requirements
 
-Your API specification must accurately reflect actual endpoint behavior because the goFalcon SDK is generated from your API spec and the Terraform Provider relies on goFalcon SDK. When specifications don't match implementation, it creates broken SDK methods that return unexpected status codes, missing fields, or incorrect data structures. This leads to runtime errors in applications using the SDK and makes the Terraform Provider unreliable.
+Your API specification must accurately reflect actual endpoint behavior. The goFalcon SDK is generated from your API spec, and the Terraform Provider relies on goFalcon SDK.
+
+If specifications do not match the implementation, the following issues may occur:
+- Broken SDK methods that return unexpected status codes
+- Missing fields or incorrect data structures
+- Runtime errors in applications using the SDK
+- Unreliable Terraform Provider
 
 ### Tags & OperationId Naming
 Tags group related endpoints and become service collections in goFalcon SDK. Use meaningful names that logically group functionality. OperationId becomes the method name in the generated SDK and should be descriptive and follow consistent naming patterns.
