@@ -110,7 +110,6 @@ If specifications do not match the implementation, the following issues may occu
 - Broken SDK methods that return unexpected status codes
 - Missing fields or incorrect data structures
 - Runtime errors in applications using the SDK
-- Unreliable Terraform Provider
 
 ### Tags & OperationId Naming
 Tags group related endpoints and become service collections in goFalcon SDK. Use meaningful names that logically group functionality. OperationId becomes the method name in the generated SDK and should be descriptive and follow consistent naming patterns.
