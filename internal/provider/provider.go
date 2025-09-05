@@ -207,7 +207,9 @@ func (p *CrowdStrikeProvider) Configure(
 		Context:           context.Background(),
 		HostOverride:      os.Getenv("HOST_OVERRIDE"),
 		TransportDecorator: falcon.TransportDecorator(func(r http.RoundTripper) http.RoundTripper {
-			return logging.NewLoggingHTTPTransport(r)
+			loggingTransport := logging.NewLoggingHTTPTransport(r)
+			retryTransport := NewRetryTransport(loggingTransport)
+			return retryTransport
 		}),
 	}
 
