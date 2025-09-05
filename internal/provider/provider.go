@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff/v5"
 	"github.com/crowdstrike/gofalcon/falcon"
+	"github.com/crowdstrike/gofalcon/falcon/client"
 	contentupdatepolicy "github.com/crowdstrike/terraform-provider-crowdstrike/internal/content_update_policy"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/fcs"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/fim"
@@ -211,7 +215,28 @@ func (p *CrowdStrikeProvider) Configure(
 		apiConfig.MemberCID = config.MemberCID.ValueString()
 	}
 
-	client, err := falcon.NewClient(&apiConfig)
+	operation := func() (*client.CrowdStrikeAPISpecification, error) {
+		client, err := falcon.NewClient(&apiConfig)
+		if err != nil {
+			if strings.Contains(err.Error(), "oauth2AccessTokenTooManyRequests") {
+				return nil, err
+			}
+			return client, backoff.Permanent(err)
+		}
+		tflog.Debug(ctx, "Successfully created CrowdStrike client")
+		return client, err
+	}
+
+	bNotify := func(err error, duration time.Duration) {
+		tflog.Warn(ctx, fmt.Sprintf("Retrying to create CrowdStrike client after error: %s", err.Error()), map[string]any{
+			"wait_duration": duration.String(),
+		})
+	}
+	bExponential := backoff.NewExponentialBackOff()
+	bExponential.MaxInterval = 1 * time.Minute
+	bExponential.InitialInterval = 2 * time.Second
+
+	client, err := backoff.Retry(ctx, operation, backoff.WithBackOff(bExponential), backoff.WithMaxTries(10), backoff.WithNotify(backoff.Notify(bNotify)))
 
 	if err != nil {
 		resp.Diagnostics.AddError(
