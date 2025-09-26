@@ -12,7 +12,7 @@ on:
 # GitHub considers creating releases and uploading assets as writing contents.
 permissions:
   contents: write
-
+test
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
