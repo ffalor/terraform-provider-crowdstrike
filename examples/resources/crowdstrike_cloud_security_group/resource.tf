@@ -7,7 +7,7 @@ terraform {
 }
 
 provider "crowdstrike" {
-  cloud = "us-2 "
+  cloud = "us-2"
 }
 
 resource "crowdstrike_cloud_security_group" "example" {
