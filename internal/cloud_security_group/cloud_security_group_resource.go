@@ -84,10 +84,7 @@ type cloudSecurityGroupModel struct {
 	CloudResources types.List   `tfsdk:"cloud_resources"`
 	Images         types.List   `tfsdk:"images"`
 	// Computed fields
-	CreatedAt types.String `tfsdk:"created_at"`
-	CreatedBy types.String `tfsdk:"created_by"`
-	UpdatedAt types.String `tfsdk:"updated_at"`
-	UpdatedBy types.String `tfsdk:"updated_by"`
+	LastUpdated types.String `tfsdk:"last_updated"`
 }
 
 func (r *cloudSecurityGroupResource) Metadata(
@@ -258,20 +255,8 @@ func (r *cloudSecurityGroupResource) Schema(
 				},
 			},
 			// Computed attributes
-			"created_at": schema.StringAttribute{
-				MarkdownDescription: "The timestamp when the cloud security group was created.",
-				Computed:            true,
-			},
-			"created_by": schema.StringAttribute{
-				MarkdownDescription: "The user who created the cloud security group.",
-				Computed:            true,
-			},
-			"updated_at": schema.StringAttribute{
-				MarkdownDescription: "The timestamp when the cloud security group was last updated.",
-				Computed:            true,
-			},
-			"updated_by": schema.StringAttribute{
-				MarkdownDescription: "The user who last updated the cloud security group.",
+			"last_updated": schema.StringAttribute{
+				MarkdownDescription: "The RFC850 timestamp of the last update to this resource by Terraform.",
 				Computed:            true,
 			},
 		},
@@ -375,6 +360,8 @@ func (r *cloudSecurityGroupResource) Create(
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	data.LastUpdated = utils.GenerateUpdateTimestamp()
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -498,6 +485,8 @@ func (r *cloudSecurityGroupResource) Update(
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	data.LastUpdated = utils.GenerateUpdateTimestamp()
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -702,31 +691,6 @@ func (m *cloudSecurityGroupModel) fromAPIModel(
 		m.Owners = types.ListValueMust(types.StringType, ownerValues)
 	} else {
 		m.Owners = types.ListValueMust(types.StringType, []attr.Value{})
-	}
-
-	// Handle timestamps
-	if !apiModel.CreatedAt.IsZero() {
-		m.CreatedAt = types.StringValue(apiModel.CreatedAt.String())
-	} else {
-		m.CreatedAt = types.StringNull()
-	}
-
-	if apiModel.CreatedBy != "" {
-		m.CreatedBy = types.StringValue(apiModel.CreatedBy)
-	} else {
-		m.CreatedBy = types.StringNull()
-	}
-
-	if !apiModel.UpdatedAt.IsZero() {
-		m.UpdatedAt = types.StringValue(apiModel.UpdatedAt.String())
-	} else {
-		m.UpdatedAt = types.StringNull()
-	}
-
-	if apiModel.UpdatedBy != "" {
-		m.UpdatedBy = types.StringValue(apiModel.UpdatedBy)
-	} else {
-		m.UpdatedBy = types.StringNull()
 	}
 
 	// TODO: Handle selectors conversion from read-only selectors to write selectors

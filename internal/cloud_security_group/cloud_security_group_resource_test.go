@@ -23,20 +23,14 @@ func TestAccCloudSecurityGroupResource_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", rName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttrSet(resourceName, "created_at"),
-					resource.TestCheckResourceAttrSet(resourceName, "created_by"),
-					// updated_at might be null for newly created resources, so make it optional
-					resource.TestCheckResourceAttrWith(resourceName, "updated_at", func(value string) error {
-						// Allow empty/null values for updated_at on creation
-						return nil
-					}),
-					resource.TestCheckResourceAttrSet(resourceName, "updated_by"),
+					resource.TestCheckResourceAttrSet(resourceName, "last_updated"),
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"last_updated"},
 			},
 		},
 	})
@@ -61,6 +55,7 @@ func TestAccCloudSecurityGroupResource_complete(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "environment", "prod"),
 					resource.TestCheckResourceAttr(resourceName, "owners.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "owners.0", "test@example.com"),
+					resource.TestCheckResourceAttrSet(resourceName, "last_updated"),
 				),
 			},
 			{
