@@ -3,17 +3,17 @@
     "@level": "info",
     "@message": "Expanding",
     "@module": "provider.autoflex",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.DistributionConfigTF",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.DistributionConfigAWS"
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.DistributionConfigTF",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.DistributionConfigAWS"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.DistributionConfigTF",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.DistributionConfigTF",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.DistributionConfigAWS"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.DistributionConfigAWS"
   },
   {
     "@level": "trace",
@@ -21,28 +21,28 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "FunctionAssociations",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.DistributionConfigTF",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.DistributionConfigTF",
     "autoflex.target.fieldname": "FunctionAssociations",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.DistributionConfigAWS"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.DistributionConfigAWS"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "FunctionAssociations",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/types.SetNestedObjectValueOf[github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociationTF]",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types.SetNestedObjectValueOf[github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociationTF]",
     "autoflex.target.path": "FunctionAssociations",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociations"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociations"
   },
   {
     "@level": "trace",
     "@message": "Expanding NestedObjectCollection to XML wrapper",
     "@module": "provider.autoflex",
     "autoflex.source.path": "FunctionAssociations",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/types.SetNestedObjectValueOf[github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociationTF]",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types.SetNestedObjectValueOf[github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociationTF]",
     "autoflex.target.path": "FunctionAssociations",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociations",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociations",
     "source_type": "SetNestedObjectTypeOf[flex.FunctionAssociationTF]",
     "target_type": "flex.FunctionAssociations"
   },
@@ -51,9 +51,9 @@
     "@message": "Converting nested objects to items",
     "@module": "provider.autoflex",
     "autoflex.source.path": "FunctionAssociations",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/types.SetNestedObjectValueOf[github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociationTF]",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types.SetNestedObjectValueOf[github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociationTF]",
     "autoflex.target.path": "FunctionAssociations",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociations",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociations",
     "items_count": 2,
     "items_type": "[]flex.FunctionAssociation"
   },
@@ -62,9 +62,9 @@
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociationTF",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociationTF",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociation"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociation"
   },
   {
     "@level": "trace",
@@ -72,10 +72,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "EventType",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociationTF",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociationTF",
     "autoflex.target.fieldname": "EventType",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociation"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociation"
   },
   {
     "@level": "info",
@@ -92,10 +92,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "FunctionARN",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociationTF",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociationTF",
     "autoflex.target.fieldname": "FunctionARN",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociation"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociation"
   },
   {
     "@level": "info",
@@ -111,9 +111,9 @@
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociationTF",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociationTF",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociation"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociation"
   },
   {
     "@level": "trace",
@@ -121,10 +121,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "EventType",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociationTF",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociationTF",
     "autoflex.target.fieldname": "EventType",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociation"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociation"
   },
   {
     "@level": "info",
@@ -141,10 +141,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "FunctionARN",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociationTF",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociationTF",
     "autoflex.target.fieldname": "FunctionARN",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociation"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociation"
   },
   {
     "@level": "info",
@@ -160,9 +160,9 @@
     "@message": "Successfully expanded NestedObjectCollection to XML wrapper",
     "@module": "provider.autoflex",
     "autoflex.source.path": "FunctionAssociations",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/types.SetNestedObjectValueOf[github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociationTF]",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types.SetNestedObjectValueOf[github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociationTF]",
     "autoflex.target.path": "FunctionAssociations",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.FunctionAssociations",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.FunctionAssociations",
     "items_count": 2
   }
 ]

@@ -3,17 +3,17 @@
     "@level": "info",
     "@message": "Expanding",
     "@module": "provider.autoflex",
-    "autoflex.source.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfAllThePrimitiveFields",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsAllThePrimitiveFields"
+    "autoflex.source.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfAllThePrimitiveFields",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsAllThePrimitiveFields"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfAllThePrimitiveFields",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfAllThePrimitiveFields",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsAllThePrimitiveFields"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsAllThePrimitiveFields"
   },
   {
     "@level": "trace",
@@ -21,10 +21,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field1",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfAllThePrimitiveFields",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfAllThePrimitiveFields",
     "autoflex.target.fieldname": "Field1",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsAllThePrimitiveFields"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsAllThePrimitiveFields"
   },
   {
     "@level": "info",
@@ -41,10 +41,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field2",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfAllThePrimitiveFields",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfAllThePrimitiveFields",
     "autoflex.target.fieldname": "Field2",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsAllThePrimitiveFields"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsAllThePrimitiveFields"
   },
   {
     "@level": "info",
@@ -61,10 +61,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field3",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfAllThePrimitiveFields",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfAllThePrimitiveFields",
     "autoflex.target.fieldname": "Field3",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsAllThePrimitiveFields"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsAllThePrimitiveFields"
   },
   {
     "@level": "info",
@@ -81,10 +81,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field4",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfAllThePrimitiveFields",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfAllThePrimitiveFields",
     "autoflex.target.fieldname": "Field4",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsAllThePrimitiveFields"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsAllThePrimitiveFields"
   },
   {
     "@level": "info",
@@ -101,10 +101,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field5",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfAllThePrimitiveFields",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfAllThePrimitiveFields",
     "autoflex.target.fieldname": "Field5",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsAllThePrimitiveFields"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsAllThePrimitiveFields"
   },
   {
     "@level": "info",
@@ -121,10 +121,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field6",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfAllThePrimitiveFields",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfAllThePrimitiveFields",
     "autoflex.target.fieldname": "Field6",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsAllThePrimitiveFields"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsAllThePrimitiveFields"
   },
   {
     "@level": "info",
@@ -141,10 +141,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field7",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfAllThePrimitiveFields",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfAllThePrimitiveFields",
     "autoflex.target.fieldname": "Field7",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsAllThePrimitiveFields"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsAllThePrimitiveFields"
   },
   {
     "@level": "info",
@@ -161,10 +161,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field8",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfAllThePrimitiveFields",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfAllThePrimitiveFields",
     "autoflex.target.fieldname": "Field8",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsAllThePrimitiveFields"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsAllThePrimitiveFields"
   },
   {
     "@level": "info",
@@ -181,10 +181,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field9",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfAllThePrimitiveFields",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfAllThePrimitiveFields",
     "autoflex.target.fieldname": "Field9",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsAllThePrimitiveFields"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsAllThePrimitiveFields"
   },
   {
     "@level": "info",
@@ -201,10 +201,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field10",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfAllThePrimitiveFields",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfAllThePrimitiveFields",
     "autoflex.target.fieldname": "Field10",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsAllThePrimitiveFields"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsAllThePrimitiveFields"
   },
   {
     "@level": "info",
@@ -221,10 +221,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field11",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfAllThePrimitiveFields",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfAllThePrimitiveFields",
     "autoflex.target.fieldname": "Field11",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsAllThePrimitiveFields"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsAllThePrimitiveFields"
   },
   {
     "@level": "info",
@@ -241,10 +241,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field12",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfAllThePrimitiveFields",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfAllThePrimitiveFields",
     "autoflex.target.fieldname": "Field12",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsAllThePrimitiveFields"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsAllThePrimitiveFields"
   },
   {
     "@level": "info",

@@ -3,17 +3,17 @@
     "@level": "info",
     "@message": "Flattening",
     "@module": "provider.autoflex",
-    "autoflex.source.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsComplexValue",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfComplexValue"
+    "autoflex.source.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsComplexValue",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfComplexValue"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsComplexValue",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsComplexValue",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfComplexValue"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfComplexValue"
   },
   {
     "@level": "trace",
@@ -21,10 +21,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field1",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsComplexValue",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsComplexValue",
     "autoflex.target.fieldname": "Field1",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfComplexValue"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfComplexValue"
   },
   {
     "@level": "info",
@@ -41,19 +41,19 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field2",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsComplexValue",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsComplexValue",
     "autoflex.target.fieldname": "Field2",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfComplexValue"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfComplexValue"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "Field2",
-    "autoflex.source.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsNestedObjectPointer",
+    "autoflex.source.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsNestedObjectPointer",
     "autoflex.target.path": "Field2",
-    "autoflex.target.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/types.ListNestedObjectValueOf[github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfListOfNestedObject]"
+    "autoflex.target.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types.ListNestedObjectValueOf[github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfListOfNestedObject]"
   },
   {
     "@level": "trace",
@@ -61,19 +61,19 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field1",
     "autoflex.source.path": "Field2",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsNestedObjectPointer",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsNestedObjectPointer",
     "autoflex.target.fieldname": "Field1",
     "autoflex.target.path": "Field2",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfListOfNestedObject"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfListOfNestedObject"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "Field2.Field1",
-    "autoflex.source.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsSingleStringValue",
+    "autoflex.source.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsSingleStringValue",
     "autoflex.target.path": "Field2.Field1",
-    "autoflex.target.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/types.ListNestedObjectValueOf[github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleStringField]"
+    "autoflex.target.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types.ListNestedObjectValueOf[github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleStringField]"
   },
   {
     "@level": "trace",
@@ -81,10 +81,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field1",
     "autoflex.source.path": "Field2.Field1",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsSingleStringValue",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsSingleStringValue",
     "autoflex.target.fieldname": "Field1",
     "autoflex.target.path": "Field2.Field1",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleStringField"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleStringField"
   },
   {
     "@level": "info",
@@ -101,10 +101,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field3",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsComplexValue",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsComplexValue",
     "autoflex.target.fieldname": "Field3",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfComplexValue"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfComplexValue"
   },
   {
     "@level": "info",
@@ -131,19 +131,19 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field4",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsComplexValue",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsComplexValue",
     "autoflex.target.fieldname": "Field4",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfComplexValue"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfComplexValue"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "Field4",
-    "autoflex.source.type": "[]github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsSingleInt64Value",
+    "autoflex.source.type": "[]github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsSingleInt64Value",
     "autoflex.target.path": "Field4",
-    "autoflex.target.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/types.SetNestedObjectValueOf[github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleInt64Field]"
+    "autoflex.target.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types.SetNestedObjectValueOf[github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleInt64Field]"
   },
   {
     "@level": "trace",
@@ -151,9 +151,9 @@
     "@module": "provider.autoflex",
     "autoflex.source.path": "Field4",
     "autoflex.source.size": 3,
-    "autoflex.source.type": "[]github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsSingleInt64Value",
+    "autoflex.source.type": "[]github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsSingleInt64Value",
     "autoflex.target.path": "Field4",
-    "autoflex.target.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/types.SetNestedObjectValueOf[github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleInt64Field]"
+    "autoflex.target.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types.SetNestedObjectValueOf[github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleInt64Field]"
   },
   {
     "@level": "trace",
@@ -161,10 +161,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field1",
     "autoflex.source.path": "Field4[0]",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsSingleInt64Value",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsSingleInt64Value",
     "autoflex.target.fieldname": "Field1",
     "autoflex.target.path": "Field4[0]",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleInt64Field"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleInt64Field"
   },
   {
     "@level": "info",
@@ -181,10 +181,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field1",
     "autoflex.source.path": "Field4[1]",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsSingleInt64Value",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsSingleInt64Value",
     "autoflex.target.fieldname": "Field1",
     "autoflex.target.path": "Field4[1]",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleInt64Field"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleInt64Field"
   },
   {
     "@level": "info",
@@ -201,10 +201,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field1",
     "autoflex.source.path": "Field4[2]",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsSingleInt64Value",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsSingleInt64Value",
     "autoflex.target.fieldname": "Field1",
     "autoflex.target.path": "Field4[2]",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleInt64Field"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleInt64Field"
   },
   {
     "@level": "info",

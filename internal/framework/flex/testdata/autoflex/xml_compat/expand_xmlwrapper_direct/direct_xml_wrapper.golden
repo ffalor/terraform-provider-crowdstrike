@@ -3,17 +3,17 @@
     "@level": "info",
     "@message": "Expanding",
     "@module": "provider.autoflex",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.DirectWrapperTF",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.DirectWrapperAWS"
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.DirectWrapperTF",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.DirectWrapperAWS"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.DirectWrapperTF",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.DirectWrapperTF",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.DirectWrapperAWS"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.DirectWrapperAWS"
   },
   {
     "@level": "trace",
@@ -21,28 +21,28 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Items",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.DirectWrapperTF",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.DirectWrapperTF",
     "autoflex.target.fieldname": "Items",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.DirectWrapperAWS"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.DirectWrapperAWS"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "Items",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/types.SetValueOf[github.com/hashicorp/terraform-plugin-framework/types/basetypes.StringValue]",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types.SetValueOf[github.com/hashicorp/terraform-plugin-framework/types/basetypes.StringValue]",
     "autoflex.target.path": "Items",
-    "autoflex.target.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.DirectXMLWrapper"
+    "autoflex.target.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.DirectXMLWrapper"
   },
   {
     "@level": "trace",
     "@message": "Successfully expanded to XML wrapper",
     "@module": "provider.autoflex",
     "autoflex.source.path": "Items",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/types.SetValueOf[github.com/hashicorp/terraform-plugin-framework/types/basetypes.StringValue]",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types.SetValueOf[github.com/hashicorp/terraform-plugin-framework/types/basetypes.StringValue]",
     "autoflex.target.path": "Items",
-    "autoflex.target.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.DirectXMLWrapper",
+    "autoflex.target.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.DirectXMLWrapper",
     "items_count": 2,
     "source_type": "basetypes.SetValue",
     "target_type": "flex.DirectXMLWrapper",

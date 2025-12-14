@@ -3,17 +3,17 @@
     "@level": "info",
     "@message": "Expanding",
     "@module": "provider.autoflex",
-    "autoflex.source.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfMapBlockListNoKey",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsMapBlockValues"
+    "autoflex.source.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfMapBlockListNoKey",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsMapBlockValues"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfMapBlockListNoKey",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfMapBlockListNoKey",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsMapBlockValues"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsMapBlockValues"
   },
   {
     "@level": "trace",
@@ -21,27 +21,27 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "MapBlock",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfMapBlockListNoKey",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfMapBlockListNoKey",
     "autoflex.target.fieldname": "MapBlock",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsMapBlockValues"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsMapBlockValues"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "MapBlock",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/types.ListNestedObjectValueOf[github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfMapBlockElementNoKey]",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types.ListNestedObjectValueOf[github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfMapBlockElementNoKey]",
     "autoflex.target.path": "MapBlock",
-    "autoflex.target.type": "map[string]github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsMapBlockElement"
+    "autoflex.target.type": "map[string]github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsMapBlockElement"
   },
   {
     "@level": "error",
     "@message": "Source has no map block key",
     "@module": "provider.autoflex",
     "autoflex.source.path": "MapBlock[0]",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfMapBlockElementNoKey",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfMapBlockElementNoKey",
     "autoflex.target.path": "MapBlock",
-    "autoflex.target.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsMapBlockElement"
+    "autoflex.target.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsMapBlockElement"
   }
 ]

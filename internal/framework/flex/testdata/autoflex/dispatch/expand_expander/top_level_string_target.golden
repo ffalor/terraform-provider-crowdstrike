@@ -3,7 +3,7 @@
     "@level": "info",
     "@message": "Expanding",
     "@module": "provider.autoflex",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfExpanderToString",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfExpanderToString",
     "autoflex.target.type": "*string"
   },
   {
@@ -11,7 +11,7 @@
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfExpanderToString",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfExpanderToString",
     "autoflex.target.path": "",
     "autoflex.target.type": "string"
   },
@@ -20,7 +20,7 @@
     "@message": "Source implements flex.Expander",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfExpanderToString",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfExpanderToString",
     "autoflex.target.path": "",
     "autoflex.target.type": "string"
   }

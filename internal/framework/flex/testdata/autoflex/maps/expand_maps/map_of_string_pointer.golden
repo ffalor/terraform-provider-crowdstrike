@@ -3,17 +3,17 @@
     "@level": "info",
     "@message": "Expanding",
     "@module": "provider.autoflex",
-    "autoflex.source.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfMapOfString",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsMapOfStringPointer"
+    "autoflex.source.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfMapOfString",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsMapOfStringPointer"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfMapOfString",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfMapOfString",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsMapOfStringPointer"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsMapOfStringPointer"
   },
   {
     "@level": "trace",
@@ -21,17 +21,17 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "FieldInner",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfMapOfString",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfMapOfString",
     "autoflex.target.fieldname": "FieldInner",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsMapOfStringPointer"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsMapOfStringPointer"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "FieldInner",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/types.MapValueOf[github.com/hashicorp/terraform-plugin-framework/types/basetypes.StringValue]",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types.MapValueOf[github.com/hashicorp/terraform-plugin-framework/types/basetypes.StringValue]",
     "autoflex.target.path": "FieldInner",
     "autoflex.target.type": "map[string]*string"
   },
@@ -41,7 +41,7 @@
     "@module": "provider.autoflex",
     "autoflex.source.path": "FieldInner",
     "autoflex.source.size": 1,
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/types.MapValueOf[github.com/hashicorp/terraform-plugin-framework/types/basetypes.StringValue]",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types.MapValueOf[github.com/hashicorp/terraform-plugin-framework/types/basetypes.StringValue]",
     "autoflex.target.path": "FieldInner",
     "autoflex.target.type": "map[string]*string"
   }

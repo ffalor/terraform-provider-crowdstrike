@@ -3,17 +3,17 @@
     "@level": "info",
     "@message": "Flattening",
     "@module": "provider.autoflex",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsHeadersForFlatten",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfHeadersModelForFlatten"
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsHeadersForFlatten",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfHeadersModelForFlatten"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsHeadersForFlatten",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsHeadersForFlatten",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfHeadersModelForFlatten"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfHeadersModelForFlatten"
   },
   {
     "@level": "trace",
@@ -23,7 +23,7 @@
     "autoflex.source.type": "flex.awsHeadersForFlatten",
     "autoflex.target.fieldname": "Headers",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfHeadersModelForFlatten",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfHeadersModelForFlatten",
     "wrapper_field": "items"
   },
   {
@@ -31,9 +31,9 @@
     "@message": "Starting XML wrapper flatten",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsHeadersForFlatten",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsHeadersForFlatten",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfHeadersModelForFlatten",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfHeadersModelForFlatten",
     "source_type": "flex.awsHeadersForFlatten",
     "target_type": "ListTypeOf[basetypes.StringValue]",
     "wrapper_field": "items"
@@ -43,9 +43,9 @@
     "@message": "Found Items field",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsHeadersForFlatten",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsHeadersForFlatten",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfHeadersModelForFlatten",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfHeadersModelForFlatten",
     "items_is_nil": false,
     "items_kind": "slice",
     "items_len": 2,
@@ -56,9 +56,9 @@
     "@message": "Using target element type",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsHeadersForFlatten",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsHeadersForFlatten",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfHeadersModelForFlatten",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfHeadersModelForFlatten",
     "element_type": "basetypes.StringType"
   },
   {
@@ -66,9 +66,9 @@
     "@message": "Converting items to list elements",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsHeadersForFlatten",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsHeadersForFlatten",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfHeadersModelForFlatten",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfHeadersModelForFlatten",
     "items_count": 2
   },
   {
@@ -76,9 +76,9 @@
     "@message": "Processing item",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsHeadersForFlatten",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsHeadersForFlatten",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfHeadersModelForFlatten",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfHeadersModelForFlatten",
     "index": 0,
     "item_kind": "string",
     "item_value": "accept"
@@ -88,9 +88,9 @@
     "@message": "Processing item",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsHeadersForFlatten",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsHeadersForFlatten",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfHeadersModelForFlatten",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfHeadersModelForFlatten",
     "index": 1,
     "item_kind": "string",
     "item_value": "content-type"
@@ -100,9 +100,9 @@
     "@message": "Creating list value",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsHeadersForFlatten",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsHeadersForFlatten",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfHeadersModelForFlatten",
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfHeadersModelForFlatten",
     "element_count": 2,
     "element_type": "basetypes.StringType"
   },
@@ -111,8 +111,8 @@
     "@message": "Setting target list value",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsHeadersForFlatten",
+    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsHeadersForFlatten",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfHeadersModelForFlatten"
+    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfHeadersModelForFlatten"
   }
 ]
