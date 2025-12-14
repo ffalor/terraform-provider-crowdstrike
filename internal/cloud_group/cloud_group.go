@@ -211,8 +211,8 @@ type imageSelectorModel struct {
 	Tags         types.List   `tfsdk:"tags"`
 }
 
-// Expand converts the Terraform model to an API image selector.
-func (i imageSelectorModel) Expand(ctx context.Context) (*models.AssetgroupmanagerV1ImageSelector, diag.Diagnostics) {
+// converToAPIModel converts the Terraform model to an API image selector.
+func (i imageSelectorModel) converToAPIModel(ctx context.Context) (*models.AssetgroupmanagerV1ImageSelector, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	apiSelector := &models.AssetgroupmanagerV1ImageSelector{
@@ -244,8 +244,8 @@ func (i imageSelectorModel) Expand(ctx context.Context) (*models.Assetgroupmanag
 	return apiSelector, diags
 }
 
-// Flatten converts an API image selector to the Terraform model.
-func (s *imageSelectorModel) Flatten(ctx context.Context, img *models.AssetgroupmanagerV1ImageSelector) diag.Diagnostics {
+// convertToTerraformModel converts an API image selector to the Terraform model.
+func (s *imageSelectorModel) convertToTerraformModel(ctx context.Context, img *models.AssetgroupmanagerV1ImageSelector) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	if img == nil {
@@ -409,7 +409,7 @@ func (m cloudGroupResourceModel) convertSelectorsToAPI(
 		}
 
 		for _, img := range images {
-			apiSelector, expandDiags := img.Expand(ctx)
+			apiSelector, expandDiags := img.converToAPIModel(ctx)
 			diags.Append(expandDiags...)
 			if diags.HasError() {
 				return nil, diags
@@ -1087,7 +1087,7 @@ func (m *cloudGroupResourceModel) wrap(
 					continue
 				}
 				var flatImg imageSelectorModel
-				diags.Append(flatImg.Flatten(ctx, img)...)
+				diags.Append(flatImg.convertToTerraformModel(ctx, img)...)
 				if diags.HasError() {
 					return diags
 				}
