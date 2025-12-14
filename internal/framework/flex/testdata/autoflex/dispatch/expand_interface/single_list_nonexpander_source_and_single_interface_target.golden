@@ -3,17 +3,17 @@
     "@level": "info",
     "@message": "Expanding",
     "@module": "provider.autoflex",
-    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfListNestedObject[github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleStringField]",
-    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsInterfaceSingle"
+    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfListNestedObject[github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleStringField]",
+    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsInterfaceSingle"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfListNestedObject[github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleStringField]",
+    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfListNestedObject[github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleStringField]",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsInterfaceSingle"
+    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsInterfaceSingle"
   },
   {
     "@level": "trace",
@@ -21,28 +21,28 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field1",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfListNestedObject[github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleStringField]",
+    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfListNestedObject[github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleStringField]",
     "autoflex.target.fieldname": "Field1",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsInterfaceSingle"
+    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsInterfaceSingle"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "Field1",
-    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types.ListNestedObjectValueOf[github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleStringField]",
+    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/types.ListNestedObjectValueOf[github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleStringField]",
     "autoflex.target.path": "Field1",
-    "autoflex.target.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsInterfaceInterface"
+    "autoflex.target.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsInterfaceInterface"
   },
   {
     "@level": "error",
     "@message": "AutoFlex Expand; incompatible types",
     "@module": "provider.autoflex",
     "autoflex.source.path": "Field1[0]",
-    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleStringField",
+    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleStringField",
     "autoflex.target.path": "Field1",
-    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsInterfaceInterface",
+    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsInterfaceInterface",
     "from": {},
     "to": 20
   }

@@ -5,6 +5,7 @@ package flex
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"iter"
 	"reflect"
@@ -26,7 +27,7 @@ import (
 
 // Flatten = AWS --> TF
 
-// Flattener is implemented by types that customize their flattening.
+// Flattener is implemented by types that customize their flattening
 type Flattener interface {
 	Flatten(ctx context.Context, v any) diag.Diagnostics
 }
@@ -56,7 +57,7 @@ type autoFlattener struct {
 }
 
 // newAutoFlattener initializes an auto-flattener with defaults that can be overridden
-// via functional options.
+// via functional options
 func newAutoFlattener(optFns []AutoFlexOptionsFunc) *autoFlattener {
 	o := AutoFlexOptions{
 		ignoredFieldNames: DefaultIgnoredFieldNames,
@@ -619,6 +620,34 @@ func (flattener autoFlattener) interface_(ctx context.Context, vFrom reflect.Val
 		//
 		// JSONStringer -> types.String-ish.
 		//
+		if vFrom.Type().Implements(reflect.TypeFor[json.Marshaler]()) {
+			tflog.SubsystemInfo(ctx, subsystemName, "Source implements json.Marshaler")
+
+			stringValue := types.StringNull()
+
+			if vFrom.IsNil() {
+				tflog.SubsystemTrace(ctx, subsystemName, "Flattening null value")
+			} else {
+				doc := vFrom.Interface().(json.Marshaler)
+				b, err := doc.MarshalJSON()
+				if err != nil {
+					tflog.SubsystemError(ctx, subsystemName, "Marshalling JSON document", map[string]any{
+						logAttrKeyError: err.Error(),
+					})
+					diags.Append(diagFlatteningMarshalSmithyDocument(reflect.TypeOf(doc), err))
+					return diags
+				}
+				stringValue = types.StringValue(string(b))
+			}
+			v, d := tTo.ValueFromString(ctx, stringValue)
+			diags.Append(d...)
+			if diags.HasError() {
+				return diags
+			}
+
+			vTo.Set(reflect.ValueOf(v))
+			return diags
+		}
 
 	case fwtypes.NestedObjectType:
 		//
@@ -905,8 +934,91 @@ func (flattener autoFlattener) map_(ctx context.Context, sourcePath path.Path, v
 				}
 
 				switch tMapElem.Elem().Kind() {
+				case reflect.String:
+					from := vFrom.Interface().(map[string]map[string]string)
+					tflog.SubsystemTrace(ctx, subsystemName, "Flattening map", map[string]any{
+						logAttrKeySourceSize: len(from),
+					})
+					elements := make(map[string]attr.Value, len(from))
+					for k, v := range from {
+						innerElements := make(map[string]attr.Value, len(v))
+						for ik, iv := range v {
+							innerElements[ik] = types.StringValue(iv)
+						}
+						tflog.SubsystemTrace(ctx, subsystemName, "Flattening with NewMapValueOf", map[string]any{
+							logAttrKeySourcePath: sourcePath.AtMapKey(k).String(),
+							logAttrKeySourceType: fullTypeName(reflect.TypeOf(v)),
+							logAttrKeySourceSize: len(v),
+							logAttrKeyTargetPath: targetPath.AtMapKey(k).String(),
+							logAttrKeyTargetType: fullTypeName(reflect.TypeOf(innerElements)),
+						})
+						innerMap, d := fwtypes.NewMapValueOf[types.String](ctx, innerElements)
+						diags.Append(d...)
+						if diags.HasError() {
+							return diags
+						}
+
+						elements[k] = innerMap
+					}
+					map_, d := fwtypes.NewMapValueOf[fwtypes.MapValueOf[types.String]](ctx, elements)
+					diags.Append(d...)
+					if diags.HasError() {
+						return diags
+					}
+
+					to, d := tTo.ValueFromMap(ctx, map_.MapValue)
+					diags.Append(d...)
+					if diags.HasError() {
+						return diags
+					}
+
+					vTo.Set(reflect.ValueOf(to))
+					return diags
+
+				case reflect.Pointer:
+					from := vFrom.Interface().(map[string]map[string]*string)
+					tflog.SubsystemTrace(ctx, subsystemName, "Flattening map", map[string]any{
+						logAttrKeySourceSize: len(from),
+					})
+					elements := make(map[string]attr.Value, len(from))
+					for k, v := range from {
+						innerElements := make(map[string]attr.Value, len(v))
+						for ik, iv := range v {
+							innerElements[ik] = types.StringValue(*iv)
+						}
+						tflog.SubsystemTrace(ctx, subsystemName, "Flattening with NewMapValueOf", map[string]any{
+							logAttrKeySourcePath: sourcePath.AtMapKey(k).String(),
+							logAttrKeySourceType: fullTypeName(reflect.TypeOf(v)),
+							logAttrKeySourceSize: len(v),
+							logAttrKeyTargetPath: targetPath.AtMapKey(k).String(),
+							logAttrKeyTargetType: fullTypeName(reflect.TypeOf(innerElements)),
+						})
+						innerMap, d := fwtypes.NewMapValueOf[types.String](ctx, innerElements)
+						diags.Append(d...)
+						if diags.HasError() {
+							return diags
+						}
+
+						elements[k] = innerMap
+					}
+					map_, d := fwtypes.NewMapValueOf[fwtypes.MapValueOf[types.String]](ctx, elements)
+					diags.Append(d...)
+					if diags.HasError() {
+						return diags
+					}
+
+					to, d := tTo.ValueFromMap(ctx, map_.MapValue)
+					diags.Append(d...)
+					if diags.HasError() {
+						return diags
+					}
+
+					vTo.Set(reflect.ValueOf(to))
+					return diags
 				}
 			}
+
+		case reflect.Pointer:
 			switch tMapElem.Elem().Kind() {
 			case reflect.Struct:
 				if tTo, ok := tTo.(fwtypes.NestedObjectCollectionType); ok {
@@ -1376,7 +1488,7 @@ func (flattener autoFlattener) sliceOfStructToNestedObjectCollection(ctx context
 }
 
 // xmlWrapperFlatten handles flattening from AWS XML wrapper structs to TF collection types
-// that follow the pattern: {Items: []T, Quantity: *int32} -> []T.
+// that follow the pattern: {Items: []T, Quantity: *int32} -> []T
 func (flattener autoFlattener) xmlWrapperFlatten(ctx context.Context, vFrom reflect.Value, tTo attr.Type, vTo reflect.Value, wrapperField string) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -1756,7 +1868,7 @@ func flattenSourceFields(ctx context.Context, typ reflect.Type, opts AutoFlexOpt
 	}
 }
 
-// setMapBlockKey takes a struct and assigns the value of the `key`.
+// setMapBlockKey takes a struct and assigns the value of the `key`
 func setMapBlockKey(ctx context.Context, to any, key reflect.Value) diag.Diagnostics {
 	var diags diag.Diagnostics
 

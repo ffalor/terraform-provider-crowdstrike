@@ -3,17 +3,17 @@
     "@level": "info",
     "@message": "Expanding",
     "@module": "provider.autoflex",
-    "autoflex.source.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleStringField",
-    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsSingleStringPointer"
+    "autoflex.source.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleStringField",
+    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsSingleStringPointer"
   },
   {
     "@level": "info",
     "@message": "Converting",
     "@module": "provider.autoflex",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleStringField",
+    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleStringField",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsSingleStringPointer"
+    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsSingleStringPointer"
   },
   {
     "@level": "trace",
@@ -21,10 +21,10 @@
     "@module": "provider.autoflex",
     "autoflex.source.fieldname": "Field1",
     "autoflex.source.path": "",
-    "autoflex.source.type": "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.tfSingleStringField",
+    "autoflex.source.type": "github.com/hashicorp/terraform-provider-aws/internal/framework/flex.tfSingleStringField",
     "autoflex.target.fieldname": "Field1",
     "autoflex.target.path": "",
-    "autoflex.target.type": "*github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex.awsSingleStringPointer"
+    "autoflex.target.type": "*github.com/hashicorp/terraform-provider-aws/internal/framework/flex.awsSingleStringPointer"
   },
   {
     "@level": "info",
