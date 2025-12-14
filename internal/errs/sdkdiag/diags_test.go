@@ -6,8 +6,8 @@ package sdkdiag_test
 import (
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/errs/sdkdiag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
 
 func TestErrors(t *testing.T) {

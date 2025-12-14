@@ -4,8 +4,8 @@
 package flex
 
 import (
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/errs/fwdiag"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
 // must panics if the provided Diagnostics has errors.

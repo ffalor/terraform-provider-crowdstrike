@@ -9,9 +9,9 @@ import (
 	"reflect"
 	"slices"
 
+	tfreflect "github.com/crowdstrike/terraform-provider-crowdstrike/internal/reflect"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tfreflect "github.com/crowdstrike/terraform-provider-crowdstrike/internal/reflect"
 )
 
 type Results struct {
@@ -20,12 +20,12 @@ type Results struct {
 	flexIgnoredFieldNames []AutoFlexOptionsFunc
 }
 
-// HasChanges returns whether there are changes between the plan and state values
+// HasChanges returns whether there are changes between the plan and state values.
 func (r *Results) HasChanges() bool {
 	return r.hasChanges
 }
 
-// IgnoredFieldNamesOpts returns the list of ignored field names as AutoFlexOptionsFunc
+// IgnoredFieldNamesOpts returns the list of ignored field names as AutoFlexOptionsFunc.
 func (r *Results) IgnoredFieldNamesOpts() []AutoFlexOptionsFunc {
 	for _, v := range r.ignoredFieldNames {
 		r.flexIgnoredFieldNames = append(r.flexIgnoredFieldNames, WithIgnoredFieldNamesAppend(v))
@@ -33,12 +33,12 @@ func (r *Results) IgnoredFieldNamesOpts() []AutoFlexOptionsFunc {
 	return r.flexIgnoredFieldNames
 }
 
-// IgnoredFieldNames returns the list of ignored field names
+// IgnoredFieldNames returns the list of ignored field names.
 func (r *Results) IgnoredFieldNames() []string {
 	return r.ignoredFieldNames
 }
 
-// Diff compares the plan and state values and returns whether there are changes
+// Diff compares the plan and state values and returns whether there are changes.
 func Diff(ctx context.Context, plan, state any, options ...ChangeOption) (*Results, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	opts := NewChangeOptions(options...)

@@ -6,9 +6,9 @@ package flex
 import (
 	"context"
 
+	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/errs/fwdiag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/errs/fwdiag"
 )
 
 // BoolFromFramework converts a Framework Bool value to a bool pointer.

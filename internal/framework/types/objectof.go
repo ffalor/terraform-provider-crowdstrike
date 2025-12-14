@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/errs/fwdiag"
+	tfreflect "github.com/crowdstrike/terraform-provider-crowdstrike/internal/reflect"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
-	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/errs/fwdiag"
-	tfreflect "github.com/crowdstrike/terraform-provider-crowdstrike/internal/reflect"
 )
 
 var (
@@ -89,7 +89,6 @@ func (t objectTypeOf[T]) ValueFromObject(ctx context.Context, in basetypes.Objec
 
 func (t objectTypeOf[T]) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
 	attrValue, err := t.ObjectType.ValueFromTerraform(ctx, in)
-
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +163,6 @@ func NullOutObjectPtrFields[T any](ctx context.Context, t *T) diag.Diagnostics {
 		}
 
 		attrValue, err := NullValueOf(ctx, fieldVal.Interface())
-
 		if err != nil {
 			diags.Append(diag.NewErrorDiagnostic("attr.Type.ValueFromTerraform", err.Error()))
 			return diags

@@ -21,12 +21,12 @@ import (
 
 // Expand  = TF -->  AWS
 
-// Expander is implemented by types that customize their expansion
+// Expander is implemented by types that customize their expansion.
 type Expander interface {
 	Expand(ctx context.Context) (any, diag.Diagnostics)
 }
 
-// Expander is implemented by types that customize their expansion and can have multiple target types
+// Expander is implemented by types that customize their expansion and can have multiple target types.
 type TypedExpander interface {
 	ExpandTo(ctx context.Context, targetType reflect.Type) (any, diag.Diagnostics)
 }
@@ -56,7 +56,7 @@ type autoExpander struct {
 }
 
 // newAutoExpander initializes an auto-expander with defaults that can be overridden
-// via functional options
+// via functional options.
 func newAutoExpander(optFns []AutoFlexOptionsFunc) *autoExpander {
 	o := AutoFlexOptions{
 		ignoredFieldNames: DefaultIgnoredFieldNames,
@@ -1255,7 +1255,7 @@ func expandSourceFields(ctx context.Context, typ reflect.Type, opts AutoFlexOpti
 	}
 }
 
-// mapBlockKey takes a struct and extracts the value of the `key`
+// mapBlockKey takes a struct and extracts the value of the `key`.
 func mapBlockKey(ctx context.Context, from any) (reflect.Value, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -1452,7 +1452,7 @@ func diagExpandingIncompatibleTypes(sourceType, targetType reflect.Type) diag.Er
 }
 
 // xmlWrapper handles expansion from TF collection types to AWS XML wrapper structs
-// that follow the pattern: {Items: []T, Quantity: *int32}
+// that follow the pattern: {Items: []T, Quantity: *int32}.
 func (expander autoExpander) xmlWrapper(ctx context.Context, vFrom valueWithElementsAs, vTo reflect.Value, wrapperField string) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -1553,7 +1553,7 @@ func (expander autoExpander) xmlWrapper(ctx context.Context, vFrom valueWithElem
 }
 
 // isXMLWrapperStruct detects AWS SDK types that follow the XML wrapper pattern
-// with Items slice and Quantity pointer fields
+// with Items slice and Quantity pointer fields.
 func isXMLWrapperStruct(t reflect.Type) bool {
 	if t.Kind() != reflect.Struct {
 		return false
@@ -1588,7 +1588,7 @@ func isXMLWrapperStruct(t reflect.Type) bool {
 }
 
 // nestedObjectCollectionToXMLWrapper converts a NestedObjectCollectionValue to an XML wrapper struct
-// that follows the pattern: {Items: []T, Quantity: *int32}
+// that follows the pattern: {Items: []T, Quantity: *int32}.
 func (expander autoExpander) nestedObjectCollectionToXMLWrapper(ctx context.Context, _ path.Path, vFrom fwtypes.NestedObjectCollectionValue, _ path.Path, vTo reflect.Value) diag.Diagnostics {
 	var diags diag.Diagnostics
 

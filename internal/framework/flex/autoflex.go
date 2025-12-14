@@ -9,12 +9,12 @@ import (
 	"reflect"
 	"strings"
 
+	tfreflect "github.com/crowdstrike/terraform-provider-crowdstrike/internal/reflect"
 	pluralize "github.com/gertd/go-pluralize"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	tfreflect "github.com/crowdstrike/terraform-provider-crowdstrike/internal/reflect"
 )
 
 const (
@@ -65,16 +65,14 @@ func autoFlexValues(ctx context.Context, from, to any) (context.Context, reflect
 	}
 }
 
-var (
-	plural = pluralize.NewClient()
-)
+var plural = pluralize.NewClient()
 
 type fuzzyFieldFinder struct {
 	prefixRecursionDepth int
 	suffixRecursionDepth int
 }
 
-func (fff *fuzzyFieldFinder) findField(ctx context.Context, fieldNameFrom string, typeFrom reflect.Type, typeTo reflect.Type, flexer autoFlexer) (reflect.StructField, bool) { //nolint:unparam
+func (fff *fuzzyFieldFinder) findField(ctx context.Context, fieldNameFrom string, typeFrom, typeTo reflect.Type, flexer autoFlexer) (reflect.StructField, bool) { //nolint:unparam
 	// first precedence is exact match (case sensitive)
 	if fieldTo, ok := typeTo.FieldByName(fieldNameFrom); ok {
 		return fieldTo, true

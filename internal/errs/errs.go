@@ -37,13 +37,13 @@ func Contains(err error, needle string) bool {
 	return false
 }
 
-// IsA indicates whether an error matches an error type
+// IsA indicates whether an error matches an error type.
 func IsA[T error](err error) bool {
 	_, ok := As[T](err)
 	return ok
 }
 
-// As is equivalent to errors.As(), but returns the value in-line
+// As is equivalent to errors.As(), but returns the value in-line.
 func As[T error](err error) (T, bool) {
 	var as T
 	ok := errors.As(err, &as)
@@ -52,7 +52,7 @@ func As[T error](err error) (T, bool) {
 
 var _ ErrorWithErrorMessage = &MessageError{}
 
-// MessageError is a simple error type that implements the errorMessager
+// MessageError is a simple error type that implements the errorMessager.
 type MessageError struct {
 	error
 }
@@ -64,7 +64,7 @@ func (e *MessageError) ErrorMessage() string {
 	return e.Error()
 }
 
-// NewMessageError returns a new MessageError
+// NewMessageError returns a new MessageError.
 func NewMessageError(err error) *MessageError {
 	return &MessageError{error: err}
 }

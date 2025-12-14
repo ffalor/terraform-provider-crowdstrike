@@ -6,8 +6,8 @@ package flex
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/errs/fwdiag"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 // Float64FromFramework converts a Framework Int64 value to an int64 pointer.

@@ -7,11 +7,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/errs/fwdiag"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
-	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/errs/fwdiag"
 )
 
 var (
@@ -84,7 +84,6 @@ func (t listNestedObjectTypeOf[T]) ValueFromList(ctx context.Context, in basetyp
 
 func (t listNestedObjectTypeOf[T]) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
 	attrValue, err := t.ListType.ValueFromTerraform(ctx, in)
-
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +111,8 @@ func (t listNestedObjectTypeOf[T]) NewObjectPtr(ctx context.Context) (any, diag.
 	return objectTypeNewObjectPtr[T](ctx)
 }
 
-func (t listNestedObjectTypeOf[T]) NewObjectSlice(ctx context.Context, len, cap int) (any, diag.Diagnostics) {
-	return nestedObjectTypeNewObjectSlice[T](ctx, len, cap)
+func (t listNestedObjectTypeOf[T]) NewObjectSlice(ctx context.Context, length, capacity int) (any, diag.Diagnostics) {
+	return nestedObjectTypeNewObjectSlice[T](ctx, length, capacity)
 }
 
 func (t listNestedObjectTypeOf[T]) NullValue(ctx context.Context) (attr.Value, diag.Diagnostics) {
@@ -148,10 +147,10 @@ func (t listNestedObjectTypeOf[T]) ValueFromObjectSlice(ctx context.Context, sli
 	return nil, diags
 }
 
-func nestedObjectTypeNewObjectSlice[T any](_ context.Context, len, cap int) ([]*T, diag.Diagnostics) { //nolint:unparam
+func nestedObjectTypeNewObjectSlice[T any](_ context.Context, length, capacity int) ([]*T, diag.Diagnostics) { //nolint:unparam
 	var diags diag.Diagnostics
 
-	return make([]*T, len, cap), diags
+	return make([]*T, length, capacity), diags
 }
 
 // ListNestedObjectValueOf represents a Terraform Plugin Framework List value whose elements are of type `ObjectTypeOf[T]`.

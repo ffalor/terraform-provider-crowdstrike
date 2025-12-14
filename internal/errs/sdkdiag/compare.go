@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
 
-// Comparer is a Comparer function for use with cmp.Diff to compare two diag.Diagnostic values
+// Comparer is a Comparer function for use with cmp.Diff to compare two diag.Diagnostic values.
 func Comparer(l, r diag.Diagnostic) bool {
 	if l.Severity != r.Severity {
 		return false

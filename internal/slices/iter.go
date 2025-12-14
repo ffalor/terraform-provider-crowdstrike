@@ -8,7 +8,7 @@ import (
 )
 
 // AppliedToEach returns an iterator that yields the slice elements transformed by the function `f`.
-func AppliedToEach[S ~[]E, E any, T any](s S, f func(E) T) iter.Seq[T] {
+func AppliedToEach[S ~[]E, E, T any](s S, f func(E) T) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for _, v := range s {
 			if !yield(f(v)) {

@@ -6,6 +6,7 @@ package types
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/attr/xattr"
@@ -14,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 
+	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/enum"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/errs/fwdiag"
 )
 
@@ -23,12 +25,16 @@ var (
 	_ xattr.ValidateableAttribute = (*ListValueOf[basetypes.StringValue])(nil)
 )
 
-var (
-	// ListOfInt64Type is a custom type used for defining a List of int64s.
+// ListOfInt64Type is a custom type used for defining a List of int64s.
 
-	// ListOfStringType is a custom type used for defining a List of strings.
-	ListOfStringType = listTypeOf[basetypes.StringValue]{basetypes.ListType{ElemType: basetypes.StringType{}}, nil}
-)
+// ListOfStringType is a custom type used for defining a List of strings.
+// ListOfStringType is a custom type used for defining a List of strings.
+var ListOfStringType = listTypeOf[basetypes.StringValue]{basetypes.ListType{ElemType: basetypes.StringType{}}, nil}
+
+// ListOfStringEnumType is a custom type used for defining a List of string enums.
+func ListOfStringEnumType[T enum.Valueser[T]]() listTypeOf[StringEnum[T]] {
+	return listTypeOf[StringEnum[T]]{basetypes.ListType{ElemType: StringEnumType[T]()}, validateStringEnumSlice[T]}
+}
 
 type validateAttributeFunc[T attr.Value] func(context.Context, path.Path, []attr.Value) diag.Diagnostics
 
@@ -78,7 +84,6 @@ func (t listTypeOf[T]) ValueFromList(ctx context.Context, in basetypes.ListValue
 
 func (t listTypeOf[T]) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
 	attrValue, err := t.ListType.ValueFromTerraform(ctx, in)
-
 	if err != nil {
 		return nil, err
 	}
@@ -108,8 +113,9 @@ type ListValueOf[T attr.Value] struct {
 }
 
 type (
-	ListOfInt64  = ListValueOf[basetypes.Int64Value]
-	ListOfString = ListValueOf[basetypes.StringValue]
+	ListOfInt64                          = ListValueOf[basetypes.Int64Value]
+	ListOfString                         = ListValueOf[basetypes.StringValue]
+	ListOfStringEnum[T enum.Valueser[T]] = ListValueOf[StringEnum[T]]
 )
 
 func (v ListValueOf[T]) Equal(o attr.Value) bool {
@@ -156,4 +162,35 @@ func NewListValueOf[T attr.Value](ctx context.Context, elements []attr.Value) (L
 
 func NewListValueOfMust[T attr.Value](ctx context.Context, elements []attr.Value) ListValueOf[T] {
 	return fwdiag.Must(NewListValueOf[T](ctx, elements))
+}
+
+func validateStringEnumSlice[T enum.Valueser[T]](ctx context.Context, path path.Path, values []attr.Value) diag.Diagnostics {
+	var diags diag.Diagnostics
+	for index, enumVal := range values {
+		val, ok := enumVal.(StringEnum[T])
+		if !ok {
+			diags.AddAttributeError(
+				path,
+				"Invalid String Enum Type",
+				fmt.Sprintf("Expected type: %v, got: %v", StringEnum[T]{}.Type(ctx), enumVal.Type(ctx)),
+			)
+
+			return diags
+		}
+
+		if val.IsNull() || val.IsUnknown() {
+			continue
+		}
+
+		if !slices.Contains(val.ValueEnum().Values(), val.ValueEnum()) {
+			parentPath := fmt.Sprintf("%v[%d]", path, index)
+			diags.AddAttributeError(
+				path,
+				"Invalid String Enum Value",
+				fmt.Sprintf("Value [%s] at attribute %v is not a valid enum value. Valid values are: %s",
+					val.ValueString(), parentPath, val.ValueEnum().Values()),
+			)
+		}
+	}
+	return diags
 }

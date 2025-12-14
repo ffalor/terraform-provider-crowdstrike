@@ -6,10 +6,10 @@ package flex
 import (
 	"context"
 
+	fwtypes "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	fwtypes "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types"
 )
 
 func ExpandFrameworkStringValueList(ctx context.Context, v basetypes.ListValuable) []string {

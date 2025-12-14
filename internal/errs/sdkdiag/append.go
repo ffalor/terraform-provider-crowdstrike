@@ -6,8 +6,8 @@ package sdkdiag
 import (
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	tfslices "github.com/crowdstrike/terraform-provider-crowdstrike/internal/slices"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
 
 func AppendWarningf(diags diag.Diagnostics, format string, a ...any) diag.Diagnostics {

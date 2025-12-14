@@ -8,19 +8,19 @@ import (
 	"fmt"
 	"strings"
 
+	tfslices "github.com/crowdstrike/terraform-provider-crowdstrike/internal/slices"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	tfslices "github.com/crowdstrike/terraform-provider-crowdstrike/internal/slices"
 )
 
 // Errors returns all the Diagnostic in Diagnostics that are SeverityError.
-// Equivalent to terraform-plugin-framework/diag/diags.Errors()
+// Equivalent to terraform-plugin-framework/diag/diags.Errors().
 func Errors(diags diag.Diagnostics) diag.Diagnostics {
 	return tfslices.Filter(diags, severityFilter(diag.Error))
 }
 
 // Warnings returns all the Diagnostic in Diagnostics that are SeverityWarning.
-// Equivalent to terraform-plugin-framework/diag/diags.Warnings()
+// Equivalent to terraform-plugin-framework/diag/diags.Warnings().
 func Warnings(diags diag.Diagnostics) diag.Diagnostics {
 	return tfslices.Filter(diags, severityFilter(diag.Warning))
 }
@@ -35,7 +35,7 @@ func DiagnosticError(diag diag.Diagnostic) error {
 	return errors.New(DiagnosticString(diag))
 }
 
-// DiagnosticsError returns an error containing all Diagnostic with SeverityError
+// DiagnosticsError returns an error containing all Diagnostic with SeverityError.
 func DiagnosticsError(diags diag.Diagnostics) error {
 	var errs []error
 
@@ -47,7 +47,7 @@ func DiagnosticsError(diags diag.Diagnostics) error {
 }
 
 // DiagnosticString formats a Diagnostic
-// If there is no `Detail`, only prints summary, otherwise prints both
+// If there is no `Detail`, only prints summary, otherwise prints both.
 func DiagnosticString(d diag.Diagnostic) string {
 	var buf strings.Builder
 
@@ -93,7 +93,7 @@ func pathString(path cty.Path) string {
 	return buf.String()
 }
 
-// DiagnosticsString formats a Diagnostics
+// DiagnosticsString formats a Diagnostics.
 func DiagnosticsString(diags diag.Diagnostics) string {
 	var buf strings.Builder
 

@@ -6,10 +6,10 @@ package types
 import (
 	"context"
 
+	tfmaps "github.com/crowdstrike/terraform-provider-crowdstrike/internal/maps"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
-	tfmaps "github.com/crowdstrike/terraform-provider-crowdstrike/internal/maps"
 )
 
 // NullValueOf returns a null attr.Value for the specified `v`.

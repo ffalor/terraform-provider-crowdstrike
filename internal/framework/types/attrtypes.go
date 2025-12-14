@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/errs/fwdiag"
 	tfreflect "github.com/crowdstrike/terraform-provider-crowdstrike/internal/reflect"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
 // AttributeTypes returns a map of attribute types for the specified type T.

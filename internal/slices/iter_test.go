@@ -48,7 +48,7 @@ func TestAppliedToEach(t *testing.T) {
 	}
 }
 
-// Copied and adapted from stdlib slices package
+// Copied and adapted from stdlib slices package.
 func TestBackwardValues(t *testing.T) {
 	t.Parallel()
 

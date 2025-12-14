@@ -5,11 +5,9 @@ package flex
 
 import "slices"
 
-var (
-	DefaultIgnoredFieldNames = []string{
-		"Tags", // Resource tags are handled separately.
-	}
-)
+var DefaultIgnoredFieldNames = []string{
+	"Tags", // Resource tags are handled separately.
+}
 
 // AutoFlexOptionsFunc is a type alias for an autoFlexer functional option.
 type AutoFlexOptionsFunc func(*AutoFlexOptions)
@@ -70,14 +68,14 @@ func WithIgnoredFieldNames(fields []string) AutoFlexOptionsFunc {
 	}
 }
 
-// WithNoIgnoredFieldNames empties the list of ignored field names
+// WithNoIgnoredFieldNames empties the list of ignored field names.
 func WithNoIgnoredFieldNames() AutoFlexOptionsFunc {
 	return func(o *AutoFlexOptions) {
 		o.ignoredFieldNames = []string{}
 	}
 }
 
-// isIgnoredField returns true if s is in the list of ignored field names
+// isIgnoredField returns true if s is in the list of ignored field names.
 func (o *AutoFlexOptions) isIgnoredField(s string) bool {
 	return slices.Contains(o.ignoredFieldNames, s)
 }

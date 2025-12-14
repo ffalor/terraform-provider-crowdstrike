@@ -1,0 +1,30 @@
+// Copyright IBM Corp. 2014, 2025
+// SPDX-License-Identifier: MPL-2.0
+
+package enum
+
+import (
+	tfslices "github.com/crowdstrike/terraform-provider-crowdstrike/internal/slices"
+)
+
+type Valueser[T ~string] interface {
+	~string
+	Values() []T
+}
+
+func EnumValues[T Valueser[T]]() []T {
+	var zero T
+	return zero.Values()
+}
+
+func Values[T Valueser[T]]() []string {
+	return tfslices.Strings(EnumValues[T]())
+}
+
+func EnumSlice[T ~string](l ...T) []T {
+	return l
+}
+
+func Slice[T ~string](l ...T) []string {
+	return tfslices.Strings(l)
+}

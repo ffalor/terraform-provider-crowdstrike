@@ -7,9 +7,9 @@ import (
 	"context"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/errs/fwdiag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/errs/fwdiag"
 )
 
 // Int64FromFramework converts a Framework Int64 value to an int64 pointer.

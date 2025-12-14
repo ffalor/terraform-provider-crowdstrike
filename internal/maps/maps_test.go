@@ -23,11 +23,13 @@ func TestApplyToAllKeys(t *testing.T) {
 			input: map[string]int{
 				"one": 1,
 				"two": 2,
-				"3":   3},
+				"3":   3,
+			},
 			expected: map[string]int{
 				"ONE": 1,
 				"TWO": 2,
-				"3":   3},
+				"3":   3,
+			},
 		},
 		"zero elements": {
 			input:    map[string]int{},
@@ -60,17 +62,21 @@ func TestApplyToAllValues(t *testing.T) {
 			input: map[int]string{
 				1: "one",
 				2: "two",
-				3: "3"},
+				3: "3",
+			},
 			expected: map[int]string{
 				1: "ONE",
 				2: "TWO",
-				3: "3"},
+				3: "3",
+			},
 		},
 		"one element": {
 			input: map[int]string{
-				123: "abcdEFGH"},
+				123: "abcdEFGH",
+			},
 			expected: map[int]string{
-				123: "ABCDEFGH"},
+				123: "ABCDEFGH",
+			},
 		},
 		"zero elements": {
 			input:    map[int]string{},
@@ -103,7 +109,8 @@ func TestKeys(t *testing.T) {
 			input: map[string]int{
 				"one": 1,
 				"two": 2,
-				"3":   3},
+				"3":   3,
+			},
 			expected: []string{"one", "two", "3"},
 		},
 		"zero elements": {
@@ -137,7 +144,8 @@ func TestValues(t *testing.T) {
 			input: map[string]int{
 				"one": 1,
 				"two": 2,
-				"3":   3},
+				"3":   3,
+			},
 			expected: []int{1, 2, 3},
 		},
 		"zero elements": {

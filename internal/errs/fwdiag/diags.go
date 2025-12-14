@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/list"
 )
 
-// DiagnosticsError returns an error containing all Diagnostic with SeverityError
+// DiagnosticsError returns an error containing all Diagnostic with SeverityError.
 func DiagnosticsError(diags diag.Diagnostics) error {
 	var errs []error
 
@@ -24,7 +24,7 @@ func DiagnosticsError(diags diag.Diagnostics) error {
 }
 
 // DiagnosticString formats a Diagnostic
-// If there is no `Detail`, only prints summary, otherwise prints both
+// If there is no `Detail`, only prints summary, otherwise prints both.
 func DiagnosticString(d diag.Diagnostic) string {
 	var buf strings.Builder
 
@@ -75,7 +75,7 @@ func AsError[T any](x T, diags diag.Diagnostics) (T, error) {
 	return x, DiagnosticsError(diags)
 }
 
-// DiagnosticsString formats a Diagnostics
+// DiagnosticsString formats a Diagnostics.
 func DiagnosticsString(diags diag.Diagnostics) string {
 	var buf strings.Builder
 

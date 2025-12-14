@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
+	tfslices "github.com/crowdstrike/terraform-provider-crowdstrike/internal/slices"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	tfslices "github.com/crowdstrike/terraform-provider-crowdstrike/internal/slices"
 )
 
 const (
@@ -114,7 +114,7 @@ func NewAtLeastOneOfChildrenError(parentPath cty.Path, paths ...cty.Path) diag.D
 }
 
 // NewAttributeRequiredWhenError should only be used for apply-time validation, as it replicates
-// the functionality of a `Required` attribute
+// the functionality of a `Required` attribute.
 func NewAttributeRequiredError(parentPath cty.Path, attrname string) diag.Diagnostic {
 	return NewAttributeErrorDiagnostic(
 		parentPath,
