@@ -25,18 +25,20 @@ var (
 	_ xattr.ValidateableAttribute = (*ListValueOf[basetypes.StringValue])(nil)
 )
 
-// ListOfInt64Type is a custom type used for defining a List of int64s.
+var (
+	// ListOfInt64Type is a custom type used for defining a List of int64s.
+	ListOfInt64Type = listTypeOf[basetypes.Int64Value]{basetypes.ListType{ElemType: basetypes.Int64Type{}}, nil}
 
-// ListOfStringType is a custom type used for defining a List of strings.
-// ListOfStringType is a custom type used for defining a List of strings.
-var ListOfStringType = listTypeOf[basetypes.StringValue]{basetypes.ListType{ElemType: basetypes.StringType{}}, nil}
+	// ListOfStringType is a custom type used for defining a List of strings.
+	ListOfStringType = listTypeOf[basetypes.StringValue]{basetypes.ListType{ElemType: basetypes.StringType{}}, nil}
+)
+
+type validateAttributeFunc[T attr.Value] func(context.Context, path.Path, []attr.Value) diag.Diagnostics
 
 // ListOfStringEnumType is a custom type used for defining a List of string enums.
 func ListOfStringEnumType[T enum.Valueser[T]]() listTypeOf[StringEnum[T]] {
 	return listTypeOf[StringEnum[T]]{basetypes.ListType{ElemType: StringEnumType[T]()}, validateStringEnumSlice[T]}
 }
-
-type validateAttributeFunc[T attr.Value] func(context.Context, path.Path, []attr.Value) diag.Diagnostics
 
 type listTypeOf[T attr.Value] struct {
 	basetypes.ListType
@@ -84,6 +86,7 @@ func (t listTypeOf[T]) ValueFromList(ctx context.Context, in basetypes.ListValue
 
 func (t listTypeOf[T]) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
 	attrValue, err := t.ListType.ValueFromTerraform(ctx, in)
+
 	if err != nil {
 		return nil, err
 	}
