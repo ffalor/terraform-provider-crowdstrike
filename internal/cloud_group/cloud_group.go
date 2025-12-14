@@ -82,8 +82,8 @@ func (cloudProviderConfigModel) AttributeTypes(includeTags bool) map[string]attr
 	}
 }
 
-// Expand converts the Terraform model to an API cloud resource selector.
-func (c cloudProviderConfigModel) Expand(
+// convertToAPIModel converts the Terraform model to an API cloud resource selector.
+func (c cloudProviderConfigModel) convertToAPIModel(
 	ctx context.Context,
 	providerName string,
 	includeTags bool,
@@ -141,8 +141,8 @@ func (c cloudProviderConfigModel) Expand(
 	return apiSelector, diags
 }
 
-// Flatten converts an API cloud resource selector to the Terraform model.
-func (c *cloudProviderConfigModel) Flatten(
+// convertToTerraformModel converts an API cloud resource selector to the Terraform model.
+func (c *cloudProviderConfigModel) convertToTerraformModel(
 	ctx context.Context,
 	cr *models.AssetgroupmanagerV1CloudResourceSelector,
 	includeTags bool,
@@ -380,7 +380,7 @@ func (m cloudGroupResourceModel) convertSelectorsToAPI(
 		}
 
 		includeTags := providerName != "gcp"
-		return config.Expand(ctx, providerName, includeTags)
+		return config.convertToAPIModel(ctx, providerName, includeTags)
 	}
 
 	awsSelector, awsDiags := convertCloudProvider(m.AWS, "aws")
@@ -1041,7 +1041,7 @@ func (m *cloudGroupResourceModel) wrap(
 			switch *cr.CloudProvider {
 			case "aws":
 				var config cloudProviderConfigModel
-				diags.Append(config.Flatten(ctx, cr, true)...)
+				diags.Append(config.convertToTerraformModel(ctx, cr, true)...)
 				if diags.HasError() {
 					return diags
 				}
@@ -1054,7 +1054,7 @@ func (m *cloudGroupResourceModel) wrap(
 
 			case "azure":
 				var config cloudProviderConfigModel
-				diags.Append(config.Flatten(ctx, cr, true)...)
+				diags.Append(config.convertToTerraformModel(ctx, cr, true)...)
 				if diags.HasError() {
 					return diags
 				}
@@ -1067,7 +1067,7 @@ func (m *cloudGroupResourceModel) wrap(
 
 			case "gcp":
 				var config cloudProviderConfigModel
-				diags.Append(config.Flatten(ctx, cr, false)...)
+				diags.Append(config.convertToTerraformModel(ctx, cr, false)...)
 				if diags.HasError() {
 					return diags
 				}
