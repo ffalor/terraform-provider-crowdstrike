@@ -44,7 +44,6 @@ func TestRegexpTypeValueFromTerraform(t *testing.T) {
 
 			ctx := context.Background()
 			val, err := fwtypes.RegexpType.ValueFromTerraform(ctx, test.val)
-
 			if err != nil {
 				t.Fatalf("got unexpected error: %s", err)
 			}

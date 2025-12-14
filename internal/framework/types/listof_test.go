@@ -44,7 +44,6 @@ func TestListOfStringFromTerraform(t *testing.T) {
 			t.Parallel()
 
 			val, err := fwtypes.ListOfStringType.ValueFromTerraform(ctx, test.val)
-
 			if err != nil {
 				t.Fatalf("got unexpected error: %s", err)
 			}

@@ -27,7 +27,7 @@ import (
 
 // Flatten = AWS --> TF
 
-// Flattener is implemented by types that customize their flattening
+// Flattener is implemented by types that customize their flattening.
 type Flattener interface {
 	Flatten(ctx context.Context, v any) diag.Diagnostics
 }
@@ -57,7 +57,7 @@ type autoFlattener struct {
 }
 
 // newAutoFlattener initializes an auto-flattener with defaults that can be overridden
-// via functional options
+// via functional options.
 func newAutoFlattener(optFns []AutoFlexOptionsFunc) *autoFlattener {
 	o := AutoFlexOptions{
 		ignoredFieldNames: DefaultIgnoredFieldNames,
@@ -634,7 +634,7 @@ func (flattener autoFlattener) interface_(ctx context.Context, vFrom reflect.Val
 					tflog.SubsystemError(ctx, subsystemName, "Marshalling JSON document", map[string]any{
 						logAttrKeyError: err.Error(),
 					})
-					diags.Append(diagFlatteningMarshalSmithyDocument(reflect.TypeOf(doc), err))
+					diags.Append(diagFlatteningMarshalJSONDocument(reflect.TypeOf(doc), err))
 					return diags
 				}
 				stringValue = types.StringValue(string(b))
@@ -1488,7 +1488,7 @@ func (flattener autoFlattener) sliceOfStructToNestedObjectCollection(ctx context
 }
 
 // xmlWrapperFlatten handles flattening from AWS XML wrapper structs to TF collection types
-// that follow the pattern: {Items: []T, Quantity: *int32} -> []T
+// that follow the pattern: {Items: []T, Quantity: *int32} -> []T.
 func (flattener autoFlattener) xmlWrapperFlatten(ctx context.Context, vFrom reflect.Value, tTo attr.Type, vTo reflect.Value, wrapperField string) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -1868,7 +1868,7 @@ func flattenSourceFields(ctx context.Context, typ reflect.Type, opts AutoFlexOpt
 	}
 }
 
-// setMapBlockKey takes a struct and assigns the value of the `key`
+// setMapBlockKey takes a struct and assigns the value of the `key`.
 func setMapBlockKey(ctx context.Context, to any, key reflect.Value) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -2032,6 +2032,16 @@ func diagFlatteningNoMapBlockKey(sourceType reflect.Type) diag.ErrorDiagnostic {
 			"This is always an error in the provider. "+
 			"Please report the following to the provider developer:\n\n"+
 			fmt.Sprintf("Target type %q does not contain field %q", fullTypeName(sourceType), mapBlockKeyFieldName),
+	)
+}
+
+func diagFlatteningMarshalJSONDocument(sourceType reflect.Type, err error) diag.ErrorDiagnostic {
+	return diag.NewErrorDiagnostic(
+		"Incompatible Types",
+		"An unexpected error occurred while flattening configuration. "+
+			"This is always an error in the provider. "+
+			"Please report the following to the provider developer:\n\n"+
+			fmt.Sprintf("Marshalling JSON document of type %q failed: %s", fullTypeName(sourceType), err.Error()),
 	)
 }
 

@@ -16,17 +16,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
-var (
-	_ basetypes.StringTypable = (*regexpType)(nil)
-)
+var _ basetypes.StringTypable = (*regexpType)(nil)
 
 type regexpType struct {
 	basetypes.StringType
 }
 
-var (
-	RegexpType = regexpType{}
-)
+var RegexpType = regexpType{}
 
 func (t regexpType) Equal(o attr.Type) bool {
 	other, ok := o.(regexpType)
@@ -62,7 +58,6 @@ func (t regexpType) ValueFromString(_ context.Context, in types.String) (basetyp
 
 func (t regexpType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
 	attrValue, err := t.StringType.ValueFromTerraform(ctx, in)
-
 	if err != nil {
 		return nil, err
 	}

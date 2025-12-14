@@ -42,7 +42,6 @@ func TestStringEnumTypeValueFromTerraform(t *testing.T) {
 
 			ctx := context.Background()
 			val, err := fwtypes.StringEnumType[awstypes.AclPermission]().ValueFromTerraform(ctx, test.val)
-
 			if err != nil {
 				t.Fatalf("got unexpected error: %s", err)
 			}

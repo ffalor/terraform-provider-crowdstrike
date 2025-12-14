@@ -15,17 +15,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
-var (
-	_ basetypes.StringTypable = (*caseInsensitiveStringType)(nil)
-)
+var _ basetypes.StringTypable = (*caseInsensitiveStringType)(nil)
 
 type caseInsensitiveStringType struct {
 	basetypes.StringType
 }
 
-var (
-	CaseInsensitiveStringType = caseInsensitiveStringType{}
-)
+var CaseInsensitiveStringType = caseInsensitiveStringType{}
 
 func (t caseInsensitiveStringType) Equal(o attr.Type) bool {
 	other, ok := o.(caseInsensitiveStringType)

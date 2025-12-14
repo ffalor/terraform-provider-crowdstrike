@@ -86,9 +86,7 @@ func TestIsZeroStructValue(t *testing.T) {
 func TestIsZeroPointerToAny(t *testing.T) {
 	t.Parallel()
 
-	var (
-		a, b, c any
-	)
+	var a, b, c any
 	b = 0
 	c = 42
 	testCases := []struct {

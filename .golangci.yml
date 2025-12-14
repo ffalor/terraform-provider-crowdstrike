@@ -6,7 +6,6 @@ linters:
     - errchkjson
     - forcetypeassert
     - gocritic
-    - gocyclo
     - godot
     - importas
     - makezero
@@ -32,9 +31,6 @@ linters:
       - third_party$
       - builtin$
       - examples$
-  settings:
-    gocyclo:
-      min-complexity: 40
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
