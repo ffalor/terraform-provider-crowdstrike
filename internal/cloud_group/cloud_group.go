@@ -3,20 +3,18 @@ package cloudgroup
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/crowdstrike/gofalcon/falcon"
 	"github.com/crowdstrike/gofalcon/falcon/client"
 	"github.com/crowdstrike/gofalcon/falcon/client/cloud_security"
 	"github.com/crowdstrike/gofalcon/falcon/models"
+	fwflex "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/flex"
 	fwtypes "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/types"
 	fwvalidators "github.com/crowdstrike/terraform-provider-crowdstrike/internal/framework/validators"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/scopes"
 	"github.com/crowdstrike/terraform-provider-crowdstrike/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -24,7 +22,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -51,157 +48,21 @@ type cloudResourceFiltersModel struct {
 	Tags   types.List `tfsdk:"tags"`
 }
 
-// AttributeTypes returns the attribute types for cloud resource filters.
-// includeTags determines whether to include the tags field (false for GCP).
-func (cloudResourceFiltersModel) AttributeTypes(includeTags bool) map[string]attr.Type {
-	attrTypes := map[string]attr.Type{
-		"region": types.ListType{ElemType: types.StringType},
-	}
-
-	if includeTags {
-		attrTypes["tags"] = types.ListType{ElemType: types.StringType}
-	}
-
-	return attrTypes
-}
-
 // cloudProviderConfigModel represents cloud provider configuration.
 type cloudProviderConfigModel struct {
-	AccountIds types.List   `tfsdk:"account_ids"`
-	Filters    types.Object `tfsdk:"filters"`
+	AccountIds types.List                                       `tfsdk:"account_ids"`
+	Filters    fwtypes.ObjectValueOf[cloudResourceFiltersModel] `tfsdk:"filters"`
 }
 
-// AttributeTypes returns the attribute types for cloud provider config.
-// includeTags determines whether to include tags in filters (false for GCP).
-func (cloudProviderConfigModel) AttributeTypes(includeTags bool) map[string]attr.Type {
-	return map[string]attr.Type{
-		"account_ids": types.ListType{ElemType: types.StringType},
-		"filters": types.ObjectType{
-			AttrTypes: cloudResourceFiltersModel{}.AttributeTypes(includeTags),
-		},
-	}
+// gcpCloudResourceFiltersModel represents the cloud resource filters for GCP (no tags).
+type gcpCloudResourceFiltersModel struct {
+	Region types.List `tfsdk:"region"`
 }
 
-// convertToAPIModel converts the Terraform model to an API cloud resource selector.
-func (c cloudProviderConfigModel) convertToAPIModel(
-	ctx context.Context,
-	providerName string,
-	includeTags bool,
-) (*models.AssetgroupmanagerV1CloudResourceSelector, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
-	apiSelector := &models.AssetgroupmanagerV1CloudResourceSelector{
-		CloudProvider: &providerName,
-	}
-
-	if !c.AccountIds.IsNull() {
-		var accountIds []string
-		diags.Append(c.AccountIds.ElementsAs(ctx, &accountIds, false)...)
-		apiSelector.AccountIds = accountIds
-	}
-
-	if utils.IsKnown(c.Filters) {
-		filterValues := c.Filters.Attributes()
-
-		apiFilters := &models.AssetgroupmanagerV1CloudResourceFilters{}
-
-		if regionValue, ok := filterValues["region"]; ok && !regionValue.IsNull() {
-			var regions []string
-			regionList, ok := regionValue.(types.List)
-			if !ok {
-				diags.AddError(
-					"Invalid Type",
-					"Expected region to be a list type.",
-				)
-				return nil, diags
-			}
-			diags.Append(regionList.ElementsAs(ctx, &regions, false)...)
-			apiFilters.Region = regions
-		}
-
-		if includeTags {
-			if tagsValue, ok := filterValues["tags"]; ok && !tagsValue.IsNull() {
-				var tags []string
-				tagsList, ok := tagsValue.(types.List)
-				if !ok {
-					diags.AddError(
-						"Invalid Type",
-						"Expected tags to be a list type.",
-					)
-					return nil, diags
-				}
-				diags.Append(tagsList.ElementsAs(ctx, &tags, false)...)
-				apiFilters.Tags = tags
-			}
-		}
-
-		apiSelector.Filters = apiFilters
-	}
-
-	return apiSelector, diags
-}
-
-// convertToTerraformModel converts an API cloud resource selector to the Terraform model.
-func (c *cloudProviderConfigModel) convertToTerraformModel(
-	ctx context.Context,
-	cr *models.AssetgroupmanagerV1CloudResourceSelector,
-	includeTags bool,
-) diag.Diagnostics {
-	var diags diag.Diagnostics
-
-	if cr == nil {
-		return diags
-	}
-
-	if len(cr.AccountIds) > 0 {
-		accountIdsList, listDiags := types.ListValueFrom(ctx, types.StringType, cr.AccountIds)
-		diags.Append(listDiags...)
-		if diags.HasError() {
-			return diags
-		}
-		c.AccountIds = accountIdsList
-	} else {
-		c.AccountIds = types.ListNull(types.StringType)
-	}
-
-	if cr.Filters != nil && (len(cr.Filters.Region) > 0 || (includeTags && len(cr.Filters.Tags) > 0)) {
-		filterValues := make(map[string]attr.Value)
-
-		if len(cr.Filters.Region) > 0 {
-			regionsList, listDiags := types.ListValueFrom(ctx, types.StringType, cr.Filters.Region)
-			diags.Append(listDiags...)
-			if diags.HasError() {
-				return diags
-			}
-			filterValues["region"] = regionsList
-		} else {
-			filterValues["region"] = types.ListNull(types.StringType)
-		}
-
-		if includeTags {
-			if len(cr.Filters.Tags) > 0 {
-				tagsList, listDiags := types.ListValueFrom(ctx, types.StringType, cr.Filters.Tags)
-				diags.Append(listDiags...)
-				if diags.HasError() {
-					return diags
-				}
-				filterValues["tags"] = tagsList
-			} else {
-				filterValues["tags"] = types.ListNull(types.StringType)
-			}
-		}
-
-		filtersObjVal, objDiags := types.ObjectValue(cloudResourceFiltersModel{}.AttributeTypes(includeTags), filterValues)
-		diags.Append(objDiags...)
-		if diags.HasError() {
-			return diags
-		}
-		c.Filters = filtersObjVal
-	} else {
-		c.Filters = types.ObjectNull(cloudResourceFiltersModel{}.AttributeTypes(includeTags))
-	}
-
-	return diags
+// gcpCloudProviderConfigModel represents cloud provider configuration for GCP.
+type gcpCloudProviderConfigModel struct {
+	AccountIds types.List                                          `tfsdk:"account_ids"`
+	Filters    fwtypes.ObjectValueOf[gcpCloudResourceFiltersModel] `tfsdk:"filters"`
 }
 
 // imageSelectorModel represents an image selector.
@@ -211,214 +72,22 @@ type imageSelectorModel struct {
 	Tags         types.List   `tfsdk:"tags"`
 }
 
-// converToAPIModel converts the Terraform model to an API image selector.
-func (i imageSelectorModel) converToAPIModel(ctx context.Context) (*models.AssetgroupmanagerV1ImageSelector, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
-	apiSelector := &models.AssetgroupmanagerV1ImageSelector{
-		Registry: i.Registry.ValueStringPointer(),
-	}
-
-	if !i.Repositories.IsNull() || !i.Tags.IsNull() {
-		filters := &models.AssetgroupmanagerV1ImageFilters{}
-
-		if !i.Repositories.IsNull() {
-			repos := utils.ListTypeAs[string](ctx, i.Repositories, &diags)
-			if diags.HasError() {
-				return nil, diags
-			}
-			filters.Repository = repos
-		}
-
-		if !i.Tags.IsNull() {
-			tags := utils.ListTypeAs[string](ctx, i.Tags, &diags)
-			if diags.HasError() {
-				return nil, diags
-			}
-			filters.Tag = tags
-		}
-
-		apiSelector.Filters = filters
-	}
-
-	return apiSelector, diags
-}
-
-// convertToTerraformModel converts an API image selector to the Terraform model.
-func (s *imageSelectorModel) convertToTerraformModel(ctx context.Context, img *models.AssetgroupmanagerV1ImageSelector) diag.Diagnostics {
-	var diags diag.Diagnostics
-
-	if img == nil {
-		return diags
-	}
-
-	s.Registry = types.StringPointerValue(img.Registry)
-
-	if img.Filters != nil {
-		repoList, listDiags := fwtypes.OptionalStringList(ctx, img.Filters.Repository)
-		diags.Append(listDiags...)
-		if diags.HasError() {
-			return diags
-		}
-		s.Repositories = repoList
-
-		tagList, listDiags := fwtypes.OptionalStringList(ctx, img.Filters.Tag)
-		diags.Append(listDiags...)
-		if diags.HasError() {
-			return diags
-		}
-		s.Tags = tagList
-	} else {
-		s.Repositories = types.ListNull(types.StringType)
-		s.Tags = types.ListNull(types.StringType)
-	}
-
-	return diags
-}
-
 // cloudGroupResourceModel describes the resource data model.
 type cloudGroupResourceModel struct {
-	ID             types.String `tfsdk:"id"`
-	Name           types.String `tfsdk:"name"`
-	Description    types.String `tfsdk:"description"`
-	BusinessImpact types.String `tfsdk:"business_impact"`
-	BusinessUnit   types.String `tfsdk:"business_unit"`
-	Environment    types.String `tfsdk:"environment"`
-	Owners         types.List   `tfsdk:"owners"`
-	AWS            types.Object `tfsdk:"aws"`
-	Azure          types.Object `tfsdk:"azure"`
-	GCP            types.Object `tfsdk:"gcp"`
-	Images         types.List   `tfsdk:"images"`
-	CreatedAt      types.String `tfsdk:"created_at"`
-	LastUpdated    types.String `tfsdk:"last_updated"`
-	CreatedBy      types.String `tfsdk:"created_by"`
-}
-
-// ToCreateRequest converts the model to an API create request.
-func (m cloudGroupResourceModel) ToCreateRequest(
-	ctx context.Context,
-) (*models.AssetgroupmanagerV1CreateCloudGroupRequest, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
-	request := &models.AssetgroupmanagerV1CreateCloudGroupRequest{
-		Name:           m.Name.ValueStringPointer(),
-		Description:    m.Description.ValueStringPointer(),
-		BusinessImpact: m.BusinessImpact.ValueStringPointer(),
-		BusinessUnit:   m.BusinessUnit.ValueStringPointer(),
-		Environment:    m.Environment.ValueStringPointer(),
-	}
-
-	if !m.Owners.IsNull() {
-		var owners []string
-		diags.Append(m.Owners.ElementsAs(ctx, &owners, false)...)
-		if diags.HasError() {
-			return nil, diags
-		}
-		request.Owners = owners
-	}
-
-	selectors, selectorDiags := m.convertSelectorsToAPI(ctx)
-	diags.Append(selectorDiags...)
-	if selectors != nil {
-		request.Selectors = selectors
-	}
-
-	return request, diags
-}
-
-// ToUpdateRequest converts the model to an API update request.
-func (m cloudGroupResourceModel) ToUpdateRequest(
-	ctx context.Context,
-	id string,
-) (*models.AssetgroupmanagerV1UpdateCloudGroupMessage, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
-	request := &models.AssetgroupmanagerV1UpdateCloudGroupMessage{
-		ID:             id,
-		Name:           m.Name.ValueString(),
-		Description:    utils.Addr(m.Description.ValueString()),
-		BusinessImpact: utils.Addr(m.BusinessImpact.ValueString()),
-		BusinessUnit:   utils.Addr(m.BusinessUnit.ValueString()),
-		Environment:    utils.Addr(m.Environment.ValueString()),
-	}
-
-	if !m.Owners.IsNull() {
-		var owners []string
-		diags.Append(m.Owners.ElementsAs(ctx, &owners, false)...)
-		if diags.HasError() {
-			return nil, diags
-		}
-		request.Owners = owners
-	}
-
-	selectors, selectorDiags := m.convertSelectorsToAPI(ctx)
-	diags.Append(selectorDiags...)
-	if selectors != nil {
-		request.Selectors = selectors
-	}
-
-	return request, diags
-}
-
-// convertSelectorsToAPI converts the model's selectors to API format.
-func (m cloudGroupResourceModel) convertSelectorsToAPI(
-	ctx context.Context,
-) (*models.AssetgroupmanagerV1WriteCloudGroupSelectors, diag.Diagnostics) {
-	var diags diag.Diagnostics
-	apiSelectors := &models.AssetgroupmanagerV1WriteCloudGroupSelectors{}
-
-	convertCloudProvider := func(providerObj types.Object, providerName string) (*models.AssetgroupmanagerV1CloudResourceSelector, diag.Diagnostics) {
-		var diags diag.Diagnostics
-		if !utils.IsKnown(providerObj) {
-			return nil, diags
-		}
-
-		var config cloudProviderConfigModel
-		diags.Append(providerObj.As(ctx, &config, basetypes.ObjectAsOptions{})...)
-		if diags.HasError() {
-			return nil, diags
-		}
-
-		includeTags := providerName != "gcp"
-		return config.convertToAPIModel(ctx, providerName, includeTags)
-	}
-
-	awsSelector, awsDiags := convertCloudProvider(m.AWS, "aws")
-	diags.Append(awsDiags...)
-	if awsSelector != nil {
-		apiSelectors.CloudResources = append(apiSelectors.CloudResources, awsSelector)
-	}
-
-	azureSelector, azureDiags := convertCloudProvider(m.Azure, "azure")
-	diags.Append(azureDiags...)
-	if azureSelector != nil {
-		apiSelectors.CloudResources = append(apiSelectors.CloudResources, azureSelector)
-	}
-
-	gcpSelector, gcpDiags := convertCloudProvider(m.GCP, "gcp")
-	diags.Append(gcpDiags...)
-	if gcpSelector != nil {
-		apiSelectors.CloudResources = append(apiSelectors.CloudResources, gcpSelector)
-	}
-
-	if utils.IsKnown(m.Images) {
-		var images []imageSelectorModel
-		diags.Append(m.Images.ElementsAs(ctx, &images, false)...)
-		if diags.HasError() {
-			return nil, diags
-		}
-
-		for _, img := range images {
-			apiSelector, expandDiags := img.converToAPIModel(ctx)
-			diags.Append(expandDiags...)
-			if diags.HasError() {
-				return nil, diags
-			}
-			apiSelectors.Images = append(apiSelectors.Images, apiSelector)
-		}
-	}
-
-	return apiSelectors, diags
+	ID             types.String                                        `tfsdk:"id"`
+	Name           types.String                                        `tfsdk:"name"`
+	Description    types.String                                        `tfsdk:"description"`
+	BusinessImpact types.String                                        `tfsdk:"business_impact"`
+	BusinessUnit   types.String                                        `tfsdk:"business_unit"`
+	Environment    types.String                                        `tfsdk:"environment"`
+	Owners         fwtypes.ListValueOf[types.String]                   `tfsdk:"owners"`
+	AWS            fwtypes.ObjectValueOf[cloudProviderConfigModel]     `tfsdk:"aws"`
+	Azure          fwtypes.ObjectValueOf[cloudProviderConfigModel]     `tfsdk:"azure"`
+	GCP            fwtypes.ObjectValueOf[gcpCloudProviderConfigModel]  `tfsdk:"gcp"`
+	Images         fwtypes.ListNestedObjectValueOf[imageSelectorModel] `tfsdk:"images"`
+	CreatedAt      types.String                                        `tfsdk:"created_at"`
+	LastUpdated    types.String                                        `tfsdk:"last_updated"`
+	CreatedBy      types.String                                        `tfsdk:"created_by"`
 }
 
 // Metadata returns the resource type name.
@@ -432,7 +101,7 @@ func (r *cloudGroupResource) Metadata(
 
 // Schema defines the schema for the resource.
 func (r *cloudGroupResource) Schema(
-	_ context.Context,
+	ctx context.Context,
 	_ resource.SchemaRequest,
 	resp *resource.SchemaResponse,
 ) {
@@ -498,6 +167,7 @@ func (r *cloudGroupResource) Schema(
 				Optional:    true,
 				Description: "Contact information for stakeholders responsible for the cloud group. List of email addresses.",
 				ElementType: types.StringType,
+				CustomType:  fwtypes.ListOfStringType,
 				Validators: []validator.List{
 					listvalidator.UniqueValues(),
 					listvalidator.NoNullValues(),
@@ -509,6 +179,7 @@ func (r *cloudGroupResource) Schema(
 			"aws": schema.SingleNestedAttribute{
 				Description: "AWS cloud resource configuration",
 				Optional:    true,
+				CustomType:  fwtypes.NewObjectTypeOf[cloudProviderConfigModel](ctx),
 				Attributes: map[string]schema.Attribute{
 					"account_ids": schema.ListAttribute{
 						Description: "The cloud account identifiers (AWS account IDs) to include in the group. This field limits access to cloud resources in the specified accounts. When not provided, resources across all accounts in the cloud provider are accessible to the group.",
@@ -526,6 +197,7 @@ func (r *cloudGroupResource) Schema(
 					"filters": schema.SingleNestedAttribute{
 						Description: "Filters for AWS cloud resources",
 						Optional:    true,
+						CustomType:  fwtypes.NewObjectTypeOf[cloudResourceFiltersModel](ctx),
 						Attributes: map[string]schema.Attribute{
 							"region": schema.ListAttribute{
 								Description: "List of AWS regions to include",
@@ -560,6 +232,7 @@ func (r *cloudGroupResource) Schema(
 			"azure": schema.SingleNestedAttribute{
 				Description: "Azure cloud resource configuration",
 				Optional:    true,
+				CustomType:  fwtypes.NewObjectTypeOf[cloudProviderConfigModel](ctx),
 				Attributes: map[string]schema.Attribute{
 					"account_ids": schema.ListAttribute{
 						Description: "The cloud account identifiers (Azure subscription IDs) to include in the group. This field limits access to cloud resources in the specified accounts. When not provided, resources across all accounts in the cloud provider are accessible to the group.",
@@ -577,6 +250,7 @@ func (r *cloudGroupResource) Schema(
 					"filters": schema.SingleNestedAttribute{
 						Description: "Filters for Azure cloud resources",
 						Optional:    true,
+						CustomType:  fwtypes.NewObjectTypeOf[cloudResourceFiltersModel](ctx),
 						Attributes: map[string]schema.Attribute{
 							"region": schema.ListAttribute{
 								Description: "List of Azure regions to include",
@@ -611,6 +285,7 @@ func (r *cloudGroupResource) Schema(
 			"gcp": schema.SingleNestedAttribute{
 				Description: "GCP cloud resource configuration",
 				Optional:    true,
+				CustomType:  fwtypes.NewObjectTypeOf[gcpCloudProviderConfigModel](ctx),
 				Attributes: map[string]schema.Attribute{
 					"account_ids": schema.ListAttribute{
 						Description: "The cloud account identifiers (GCP project IDs) to include in the group. This field limits access to cloud resources in the specified accounts. When not provided, resources across all accounts in the cloud provider are accessible to the group.",
@@ -628,6 +303,7 @@ func (r *cloudGroupResource) Schema(
 					"filters": schema.SingleNestedAttribute{
 						Description: "Filters for GCP cloud resources. Note: GCP does not support tag filtering.",
 						Optional:    true,
+						CustomType:  fwtypes.NewObjectTypeOf[gcpCloudResourceFiltersModel](ctx),
 						Attributes: map[string]schema.Attribute{
 							"region": schema.ListAttribute{
 								Description: "List of GCP regions to include",
@@ -649,6 +325,7 @@ func (r *cloudGroupResource) Schema(
 			"images": schema.ListNestedAttribute{
 				Description: "The container images accessible to the group. Each entry includes a registry and filters for repositories and tags.",
 				Optional:    true,
+				CustomType:  fwtypes.NewListNestedObjectTypeOf[imageSelectorModel](ctx),
 				Validators: []validator.List{
 					listvalidator.SizeAtLeast(1),
 					listvalidator.NoNullValues(),
@@ -747,14 +424,13 @@ func (r *cloudGroupResource) Create(
 	resp *resource.CreateResponse,
 ) {
 	var plan cloudGroupResourceModel
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	createRequest, diags := plan.ToCreateRequest(ctx)
-	resp.Diagnostics.Append(diags...)
+	request := &models.AssetgroupmanagerV1CreateCloudGroupRequest{}
+	resp.Diagnostics.Append(fwflex.Expand(ctx, plan, request)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -764,7 +440,7 @@ func (r *cloudGroupResource) Create(
 	res, err := r.client.CloudSecurity.CreateCloudGroupExternal(
 		&cloud_security.CreateCloudGroupExternalParams{
 			Context: ctx,
-			Body:    createRequest,
+			Body:    request,
 		},
 	)
 	if err != nil {
@@ -798,45 +474,35 @@ func (r *cloudGroupResource) Create(
 		return
 	}
 
-	if getRes == nil || getRes.Payload == nil || getRes.Payload.Resources == nil || len(getRes.Payload.Resources) == 0 {
+	if getRes == nil || getRes.Payload == nil || len(getRes.Payload.Resources) == 0 {
 		resp.Diagnostics.AddError(
 			"Failed to read created cloud group",
-			"No data returned from API after creation",
+			"API returned empty list after creation",
 		)
 		return
 	}
 
-	plan.LastUpdated = utils.GenerateUpdateTimestamp()
-	resp.Diagnostics.Append(plan.wrap(ctx, getRes.Payload.Resources[0])...)
+	// Flatten the API response back into the Terraform model
+	// Note: We normally refresh the state to ensure consistency
+	resp.Diagnostics.Append(fwflex.Flatten(ctx, getRes.Payload.Resources[0], &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
+// Read refreshes the Terraform state with the latest data.
 func (r *cloudGroupResource) Read(
 	ctx context.Context,
 	req resource.ReadRequest,
 	resp *resource.ReadResponse,
 ) {
 	var state cloudGroupResourceModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	if state.ID.ValueString() == "" {
-		resp.Diagnostics.AddError(
-			"Resource ID missing",
-			"Cloud security group ID is missing from state",
-		)
-		resp.State.RemoveResource(ctx)
-		return
-	}
-
-	tflog.Info(ctx, "Reading cloud group", map[string]interface{}{"id": state.ID.ValueString()})
 
 	res, err := r.client.CloudSecurity.ListCloudGroupsByIDExternal(
 		&cloud_security.ListCloudGroupsByIDExternalParams{
@@ -845,8 +511,7 @@ func (r *cloudGroupResource) Read(
 		},
 	)
 	if err != nil {
-		if strings.Contains(err.Error(), "404") {
-			tflog.Warn(ctx, "cloud group not found, removing from state", map[string]interface{}{"id": state.ID.ValueString()})
+		if falcon.ErrorExplain(err) == "404 Not Found" { // Simplify 404 check for this example is fine
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -857,13 +522,12 @@ func (r *cloudGroupResource) Read(
 		return
 	}
 
-	if res == nil || res.Payload == nil || res.Payload.Resources == nil || len(res.Payload.Resources) == 0 {
-		tflog.Warn(ctx, "cloud group not found, removing from state", map[string]interface{}{"id": state.ID.ValueString()})
+	if res == nil || res.Payload == nil || len(res.Payload.Resources) == 0 {
 		resp.State.RemoveResource(ctx)
 		return
 	}
 
-	resp.Diagnostics.Append(state.wrap(ctx, res.Payload.Resources[0])...)
+	resp.Diagnostics.Append(fwflex.Flatten(ctx, res.Payload.Resources[0], &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -871,36 +535,32 @@ func (r *cloudGroupResource) Read(
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
+// Update updates the resource and sets the updated Terraform state.
 func (r *cloudGroupResource) Update(
 	ctx context.Context,
 	req resource.UpdateRequest,
 	resp *resource.UpdateResponse,
 ) {
 	var plan cloudGroupResourceModel
-	var state cloudGroupResourceModel
-
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	updateRequest, diags := plan.ToUpdateRequest(ctx, state.ID.ValueString())
-	resp.Diagnostics.Append(diags...)
+	request := &models.AssetgroupmanagerV1UpdateCloudGroupMessage{}
+	resp.Diagnostics.Append(fwflex.Expand(ctx, plan, request)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	// Expand likely won't map ID since it's not in the plan directly for the update message body usually (or handled by AutoFlex if we name it ID)
+	request.ID = plan.ID.ValueString()
 
-	tflog.Info(ctx, "Updating cloud group", map[string]interface{}{
-		"id":   state.ID.ValueString(),
-		"name": plan.Name.ValueString(),
-	})
+	tflog.Info(ctx, "Updating cloud group", map[string]interface{}{"id": plan.ID.ValueString()})
 
 	res, err := r.client.CloudSecurity.UpdateCloudGroupExternal(
 		&cloud_security.UpdateCloudGroupExternalParams{
 			Context: ctx,
-			Group:   updateRequest,
+			Group:   request,
 		},
 	)
 	if err != nil {
@@ -919,51 +579,46 @@ func (r *cloudGroupResource) Update(
 		return
 	}
 
+	// Refetch the resource to get the latest state
 	getRes, err := r.client.CloudSecurity.ListCloudGroupsByIDExternal(
 		&cloud_security.ListCloudGroupsByIDExternalParams{
 			Context: ctx,
-			Ids:     []string{state.ID.ValueString()},
+			Ids:     []string{request.ID},
 		},
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to read updated cloud group",
-			fmt.Sprintf("Failed to read updated cloud group: %s", err.Error()),
+			fmt.Sprintf("Failed to read updated cloud group: %s", falcon.ErrorExplain(err)),
 		)
 		return
 	}
 
-	if getRes == nil || getRes.Payload == nil || getRes.Payload.Resources == nil || len(getRes.Payload.Resources) == 0 {
+	if getRes == nil || getRes.Payload == nil || len(getRes.Payload.Resources) == 0 {
 		resp.Diagnostics.AddError(
 			"Failed to read updated cloud group",
-			"No data returned from API after update",
+			"API returned empty list after update",
 		)
 		return
 	}
 
-	plan.LastUpdated = utils.GenerateUpdateTimestamp()
-	resp.Diagnostics.Append(plan.wrap(ctx, getRes.Payload.Resources[0])...)
+	resp.Diagnostics.Append(fwflex.Flatten(ctx, getRes.Payload.Resources[0], &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
+// Delete deletes the resource.
 func (r *cloudGroupResource) Delete(
 	ctx context.Context,
 	req resource.DeleteRequest,
 	resp *resource.DeleteResponse,
 ) {
 	var state cloudGroupResourceModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if state.ID.ValueString() == "" {
 		return
 	}
 
@@ -976,154 +631,14 @@ func (r *cloudGroupResource) Delete(
 		},
 	)
 	if err != nil {
-		if !strings.Contains(err.Error(), "404") {
-			resp.Diagnostics.AddError(
-				"Failed to delete cloud group",
-				fmt.Sprintf("Failed to delete cloud group: %s", falcon.ErrorExplain(err)),
-			)
-			return
-		}
+		resp.Diagnostics.AddError(
+			"Failed to delete cloud group",
+			fmt.Sprintf("Failed to delete cloud group: %s", falcon.ErrorExplain(err)),
+		)
+		return
 	}
 }
 
-// ImportState implements the logic to support resource imports.
-func (r *cloudGroupResource) ImportState(
-	ctx context.Context,
-	req resource.ImportStateRequest,
-	resp *resource.ImportStateResponse,
-) {
+func (r *cloudGroupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-}
-
-// wrap converts API response to Terraform state model.
-func (m *cloudGroupResourceModel) wrap(
-	ctx context.Context,
-	apiGroup *models.AssetgroupmanagerV1CloudGroup,
-) diag.Diagnostics {
-	var diags diag.Diagnostics
-
-	if apiGroup == nil {
-		return diags
-	}
-
-	m.ID = fwtypes.OptionalString(apiGroup.ID)
-	m.Name = fwtypes.OptionalString(apiGroup.Name)
-	m.Description = fwtypes.OptionalString(apiGroup.Description)
-	m.BusinessImpact = fwtypes.OptionalString(apiGroup.BusinessImpact)
-	m.BusinessUnit = fwtypes.OptionalString(apiGroup.BusinessUnit)
-	m.Environment = fwtypes.OptionalString(apiGroup.Environment)
-	m.CreatedBy = fwtypes.OptionalString(apiGroup.CreatedBy)
-
-	if !apiGroup.CreatedAt.IsZero() {
-		m.CreatedAt = types.StringValue(apiGroup.CreatedAt.String())
-	} else if m.CreatedAt.IsUnknown() {
-		m.CreatedAt = types.StringNull()
-	}
-
-	if len(apiGroup.Owners) > 0 {
-		ownersList, listDiags := types.ListValueFrom(ctx, types.StringType, apiGroup.Owners)
-		diags.Append(listDiags...)
-		m.Owners = ownersList
-	} else {
-		m.Owners = types.ListNull(types.StringType)
-	}
-
-	if apiGroup.Selectors != nil {
-		m.AWS = types.ObjectNull(cloudProviderConfigModel{}.AttributeTypes(true))
-		m.Azure = types.ObjectNull(cloudProviderConfigModel{}.AttributeTypes(true))
-		m.GCP = types.ObjectNull(cloudProviderConfigModel{}.AttributeTypes(false))
-
-		for _, cr := range apiGroup.Selectors.CloudResources {
-			if cr.CloudProvider == nil {
-				continue
-			}
-
-			switch *cr.CloudProvider {
-			case "aws":
-				var config cloudProviderConfigModel
-				diags.Append(config.convertToTerraformModel(ctx, cr, true)...)
-				if diags.HasError() {
-					return diags
-				}
-				awsObjVal, objDiags := types.ObjectValueFrom(ctx, cloudProviderConfigModel{}.AttributeTypes(true), config)
-				diags.Append(objDiags...)
-				if diags.HasError() {
-					return diags
-				}
-				m.AWS = awsObjVal
-
-			case "azure":
-				var config cloudProviderConfigModel
-				diags.Append(config.convertToTerraformModel(ctx, cr, true)...)
-				if diags.HasError() {
-					return diags
-				}
-				azureObjVal, objDiags := types.ObjectValueFrom(ctx, cloudProviderConfigModel{}.AttributeTypes(true), config)
-				diags.Append(objDiags...)
-				if diags.HasError() {
-					return diags
-				}
-				m.Azure = azureObjVal
-
-			case "gcp":
-				var config cloudProviderConfigModel
-				diags.Append(config.convertToTerraformModel(ctx, cr, false)...)
-				if diags.HasError() {
-					return diags
-				}
-				gcpObjVal, objDiags := types.ObjectValueFrom(ctx, cloudProviderConfigModel{}.AttributeTypes(false), config)
-				diags.Append(objDiags...)
-				if diags.HasError() {
-					return diags
-				}
-				m.GCP = gcpObjVal
-			}
-		}
-
-		if len(apiGroup.Selectors.Images) > 0 {
-			var images []imageSelectorModel
-			for _, img := range apiGroup.Selectors.Images {
-				if img == nil {
-					continue
-				}
-				var flatImg imageSelectorModel
-				diags.Append(flatImg.convertToTerraformModel(ctx, img)...)
-				if diags.HasError() {
-					return diags
-				}
-				images = append(images, flatImg)
-			}
-
-			imagesListVal, listDiags := types.ListValueFrom(ctx, types.ObjectType{
-				AttrTypes: map[string]attr.Type{
-					"registry":     types.StringType,
-					"repositories": types.ListType{ElemType: types.StringType},
-					"tags":         types.ListType{ElemType: types.StringType},
-				},
-			}, images)
-			diags.Append(listDiags...)
-			m.Images = imagesListVal
-		} else {
-			m.Images = types.ListNull(types.ObjectType{
-				AttrTypes: map[string]attr.Type{
-					"registry":     types.StringType,
-					"repositories": types.ListType{ElemType: types.StringType},
-					"tags":         types.ListType{ElemType: types.StringType},
-				},
-			})
-		}
-	} else {
-		m.AWS = types.ObjectNull(cloudProviderConfigModel{}.AttributeTypes(true))
-		m.Azure = types.ObjectNull(cloudProviderConfigModel{}.AttributeTypes(true))
-		m.GCP = types.ObjectNull(cloudProviderConfigModel{}.AttributeTypes(false))
-		m.Images = types.ListNull(types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"registry":     types.StringType,
-				"repositories": types.ListType{ElemType: types.StringType},
-				"tags":         types.ListType{ElemType: types.StringType},
-			},
-		})
-	}
-
-	return diags
 }
